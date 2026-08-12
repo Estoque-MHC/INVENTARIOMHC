@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Contagem de Inventário</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#1C1E22;
+    --paper:#F7F6F2;
+    --panel:#FFFFFF;
+    --line:#DEDBD3;
+    --accent:#E8722C;
+    --accent-ink:#FFFFFF;
+    --ok:#2F9E58;
+    --bad:#D64545;
+    --warn:#C98A1E;
+    --muted:#8B8F98;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
+  body{-webkit-tap-highlight-color: transparent; padding-bottom:40px;}
+  h1,h2,h3{font-weight:800; margin:0 0 4px;}
+  .topbar{
+    background:var(--ink); color:#fff; padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    position:sticky; top:0; z-index:20;
+  }
+  .topbar .brand{font-size:15px; font-weight:800; letter-spacing:.02em;}
+  .topbar .sub{font-size:11px; color:#B9BCC2; margin-top:1px;}
+  .topbar button.link{background:none;border:none;color:#fff;font-size:13px;text-decoration:underline;padding:6px;cursor:pointer;}
+  .wrap{max-width:720px; margin:0 auto; padding:16px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:480px){ .grid2{grid-template-columns:1fr;} }
+  .modebtn{
+    display:block; width:100%; text-align:left; background:var(--panel); border:2px solid var(--line);
+    border-radius:12px; padding:20px; cursor:pointer; font-family:inherit; color:var(--ink);
+  }
+  .modebtn:active{background:#F0EEE8;}
+  .modebtn .em{font-size:26px;}
+  .modebtn h2{font-size:17px; margin-top:8px;}
+  .modebtn p{font-size:13px; color:#565A62; margin:4px 0 0;}
+  label{display:block; font-size:12px; font-weight:700; color:#565A62; margin-bottom:6px; text-transform:uppercase; letter-spacing:.03em;}
+  input[type=text], input[type=number], input[type=file], select{
+    width:100%; padding:12px; border:1.5px solid var(--line); border-radius:8px; font-size:16px;
+    font-family:inherit; background:#fff; color:var(--ink);
+  }
+  input:disabled, select:disabled{background:#F0EEE8; color:#565A62;}
+  input:focus, select:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent);}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--accent); color:var(--accent-ink); border:none; border-radius:8px;
+    padding:13px 18px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit;
+    min-height:46px;
+  }
+  .btn:active{filter:brightness(.92);}
+  .btn.secondary{background:var(--ink); color:#fff;}
+  .btn.ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line);}
+  .btn.block{width:100%;}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  .btn.small{padding:8px 12px; font-size:13px; min-height:auto;}
+  .row{display:flex; gap:10px; align-items:center;}
+  .row.between{justify-content:space-between;}
+  .muted{color:var(--muted); font-size:13px;}
+  .pill{display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.02em;}
+  .pill.ok{background:#E3F5E9; color:var(--ok);}
+  .pill.bad{background:#FBE8E8; color:var(--bad);}
+  .pill.warn{background:#FBF0DC; color:var(--warn);}
+  .pill.muted{background:#EEEDE9; color:var(--muted);}
+  .pill.neutral{background:#E8EEF7; color:#5B7DB1;}
+  .addr-list{max-height:52vh; overflow-y:auto; border:1px solid var(--line); border-radius:8px;}
+  .addr-item{
+    display:flex; justify-content:space-between; align-items:center; padding:14px 14px;
+    border-bottom:1px solid var(--line); cursor:pointer; background:#fff;
+  }
+  .addr-item:last-child{border-bottom:none;}
+  .addr-item:active{background:#F0EEE8;}
+  .addr-item .code{font-family:var(--mono); font-weight:800; font-size:15px;}
+  .addr-item .count{font-size:12px; color:var(--muted);}
+  .item-card{border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:10px; background:#fff;}
+  .item-card .name{font-weight:700; font-size:14px;}
+  .item-card .meta{font-size:12px; color:var(--muted); margin:2px 0 8px; font-family:var(--mono);}
+  .item-card.extra{border-left:4px solid var(--warn);}
+  .item-card.empty-confirmed{border-left:4px solid var(--bad); background:#FDF7F7;}
+  .qty-row{display:flex; gap:8px; align-items:flex-end;}
+  .qty-row .qtyInput{flex:1;}
+  .btn-nada{
+    flex-shrink:0; background:transparent; border:1.5px solid var(--bad); color:var(--bad);
+    border-radius:8px; padding:0 12px; height:46px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+  .btn-nada.active{background:var(--bad); color:#fff;}
+  .empty-tag{display:inline-block; margin-top:6px; font-size:11px; font-weight:800; color:var(--bad);}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th,td{text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:#565A62;}
+  tr.status-DIVERGENTE td{background:#FDF4F4;}
+  tr.status-MAIS td{background:#FBF0DC;}
+  tr.status-MENOS td{background:#FDF4F4;}
+  tr.status-NAO_CONTADO td{background:#FAFAF8; color:#8B8F98;}
+  tr.status-CONFLITO td{background:#FBF0DC;}
+  tr.status-REALOCADO td{background:#EEF3FA;}
+  .summary-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px;}
+  @media (min-width:560px){ .summary-grid{grid-template-columns:repeat(4,1fr);} }
+  .stat{border:1px solid var(--line); border-radius:8px; padding:12px; background:#fff; text-align:center;}
+  .stat .num{font-size:24px; font-weight:800;}
+  .stat .lbl{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
+  .filterbar{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+  .filterbar button{
+    border:1.5px solid var(--line); background:#fff; padding:7px 12px; border-radius:999px;
+    font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--ink);
+  }
+  .filterbar button.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .search-wrap{position:sticky; top:0; background:var(--paper); padding:4px 0 10px; z-index:10;}
+  .empty{text-align:center; padding:30px 10px; color:var(--muted);}
+  .warn-box{background:#FBF0DC; border:1px solid #EED9AE; border-radius:8px; padding:12px 14px; font-size:13px; color:#6B4E10; margin-bottom:14px;}
+  .err-box{background:#FBE8E8; border:1px solid #F0C0C0; border-radius:8px; padding:12px 14px; font-size:13px; color:#8A2323; margin-bottom:14px;}
+  .ok-box{background:#E3F5E9; border:1px solid #BFE6CC; border-radius:8px; padding:12px 14px; font-size:13px; color:#1E6E3C; margin-bottom:14px;}
+  .backlink{background:none;border:none;color:var(--ink);font-size:14px;font-weight:700;cursor:pointer;padding:8px 0;margin-bottom:4px;font-family:inherit;}
+  .divider{height:1px; background:var(--line); margin:16px 0;}
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:8px;}
+  .spinner{display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  footer{text-align:center; padding:24px 16px; color:var(--muted); font-size:12px;}
+  .badge-sync{font-size:11px; padding:3px 8px; border-radius:999px; font-weight:700;}
+  .badge-sync.on{background:#E3F5E9; color:var(--ok);}
+  .badge-sync.off{background:#FBE8E8; color:var(--bad);}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <div class="brand">📦 Contagem de Inventário</div>
+    <div class="sub" id="siteSub">Carregando…</div>
+  </div>
+  <button class="link" id="homeBtn" style="display:none;">Início</button>
+</div>
+<div class="wrap" id="app"></div>
+<footer id="siteFooter"></footer>
+
+<script>
+const SITES = {
+  mhc: {
+    nome: 'MHC',
+    subtitulo: 'MHC Reciclagem',
+    gform: '1FAIpQLScmZtA32x-Lkc8jzApT3GssaUvtwUy4MWXvpYPdZj982Yk3MA',
+    gsheet: '1H7a9_i6lvn7aIeOb7EkUHSCisE8NwE8e5tgJZJFSk3s',
+    gsheetView: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfTTfjfxQGy5dVgssyqXhLR2lY4FMZQSijfQfvHEK-saWoflgRW2JhwHyKg7hwjJK6sUQFd7BRBJe7/pubhtml'
+  },
+  bugre: {
+    nome: 'Bugre',
+    subtitulo: 'MHC Reciclagem — Bugre',
+    gform: '1FAIpQLSd5-xhlPGfnGDkBfggDki15nB2zunxzAyproKCWf_3AJJqo0A',
+    gsheet: '1zgUUJDIXbdS98MyDZf733VIZXfFAPdfxP6sH2NSG-mE',
+    // ⚠️ ATENÇÃO: esse link estava idêntico ao do MHC no arquivo original (BUGRE_INVENTARIO.html).
+    // Provavelmente é um copy-paste não corrigido na hora de clonar o arquivo. CONFIRME o link
+    // publicado correto da planilha do Bugre antes de considerar isso certo.
+    gsheetView: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSfTTfjfxQGy5dVgssyqXhLR2lY4FMZQSijfQfvHEK-saWoflgRW2JhwHyKg7hwjJK6sUQFd7BRBJe7/pubhtml'
+  },
+  campo_largo: {
+    nome: 'Campo Largo',
+    subtitulo: 'MHC Reciclagem — Campo Largo',
+    gform: '1FAIpQLSfSJcO2S92-NRrNMYfL-Yt3gXPol1Rn2hlInyuoEZjMiIsyyg',
+    gsheet: '1c6e-kHaAcGXfdxH-lxsZjLaWCCMgQh3iZgG_XavybIM',
+    gsheetView: 'https://docs.google.com/spreadsheets/d/1c6e-kHaAcGXfdxH-lxsZjLaWCCMgQh3iZgG_XavybIM/edit'
+  }
+};
+
+function resolveSite(){
+  const params = new URLSearchParams(window.location.search);
+  const key = (params.get('site') || '').toLowerCase().trim();
+  const site = SITES[key];
+  if(site) return site;
+
+  // Sem ?site= válido na URL (ex: arquivo aberto direto por duplo-clique, ou link incompleto).
+  // Mostra uma tela de seleção manual em vez de travar — útil pra testar localmente
+  // e como rede de segurança se algum link estiver quebrado.
+  const options = Object.keys(SITES).filter(k => SITES[k]);
+  const optionsHtml = options.map(k => `<button type="button" class="btn block" style="margin-bottom:10px;" onclick="window.location.search = '?site=${k}'">${SITES[k].nome}</button>`).join('');
+  const pendingHtml = Object.keys(SITES).filter(k => !SITES[k]).map(k => `<div class="muted" style="margin-top:4px;">${k} — ainda não configurado</div>`).join('');
+  document.body.innerHTML = `
+    <div style="padding:32px 20px;font-family:-apple-system,sans-serif;max-width:420px;margin:0 auto;">
+      <h2 style="margin-bottom:4px;">Selecione a unidade</h2>
+      <p class="muted" style="margin-bottom:20px;">Este link não especifica uma unidade (faltou <code>?site=</code> na URL). Se você tem um link fixo da sua unidade, use ele em vez desta tela — evita escolher errado.</p>
+      ${optionsHtml}
+      ${pendingHtml}
+    </div>`;
+  throw new Error('SITE_NAO_CONFIGURADO: aguardando seleção manual');
+}
+
+const SITE = resolveSite();
+document.title = `Contagem de Inventário — ${SITE.nome}`;
+document.getElementById('siteSub').textContent = SITE.subtitulo;
+document.getElementById('siteFooter').textContent = `${SITE.subtitulo} — ferramenta interna de contagem`;
+
+const GFORM_ID = SITE.gform;
+const GFORM_SUBMIT_URL = `https://docs.google.com/forms/d/e/${GFORM_ID}/formResponse`;
+const GSHEET_ID = SITE.gsheet;
+const GSHEET_VIEW_URL = SITE.gsheetView;
+const ENTRY_IDS = {
+  endereco: 'entry.797389914',
+  produto: 'entry.80351780',
+  tipo: 'entry.1596024177',
+  embalagem: 'entry.1138367993',
+  lote: 'entry.99971299',
+  situacao: 'entry.1162226536',
+  previsto: 'entry.1830381943',
+  qtd: 'entry.1902134188',
+  contador: 'entry.24644295'
+};
+
+let state = {
+  mode: null,
+  baseline: null,
+  byEndereco: null,
+  enderecos: [],
+  produtoList: [],
+  produtoInfo: null,
+  contador: '',
+  results: new Map(),
+  enderecoStatus: new Map(), // from sheet: endereco -> {contadores:Set, count}
+  currentEndereco: null,
+  searchTerm: '',
+  countFiles: [],       // optional manual CSV backups merged in Conciliacao
+  liveEntries: [],      // entries fetched from the published sheet
+  concFilter: 'ALL',
+  concSearchTerm: '',
+  autoRefresh: null,
+  sheetReachable: null,  // null=not tested yet, true/false after first attempt
+  extrasDone: new Set(), // checklist: which "extra" items have been fixed in the ERP already
+  submittedSnapshot: new Map() // key -> last qtd successfully sent to the sheet (avoids resubmitting unchanged items)
+};
+
+function keyOf(endereco, produto, tipo, emb, lote){
+  return [endereco, produto, tipo, emb, lote].map(x => (x===undefined||x===null?'':String(x).trim())).join('|');
+}
+function extraKey(r){ return keyOf(r.endereco, r.produto, r.tipo, r.embalagem, r.lote); }
+function toggleExtraDone(k){
+  if(state.extrasDone.has(k)) state.extrasDone.delete(k);
+  else state.extrasDone.add(k);
+  renderConciliacaoResult();
+}
+function saveExtrasProgress(){
+  downloadText(JSON.stringify(Array.from(state.extrasDone)), `progresso_extras_${dateStamp()}.json`, 'application/json');
+}
+function loadExtrasProgress(){
+  const f = document.getElementById('progressFile').files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = (e) => {
+    try{
+      const arr = JSON.parse(e.target.result);
+      arr.forEach(k => state.extrasDone.add(k));
+      renderConciliacaoResult();
+    }catch(err){ alert('Arquivo de progresso inválido.'); }
+  };
+  r.readAsText(f, 'UTF-8');
+}
+function render(html){ document.getElementById('app').innerHTML = html; }
+function escapeHtml(s){ return String(s===undefined||s===null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/`/g,'&#96;'); }
+function slug(s){ return (s||'contador').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+function dateStamp(){ const d=new Date(); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'_'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0'); }
+function fmtTime(iso){ if(!iso) return ''; try{ const d = new Date(iso); return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){ return iso; } }
+
+document.getElementById('homeBtn').addEventListener('click', () => {
+  if(confirm('Voltar ao início?')){ resetAll(); }
+});
+
+function resetAll(){
+  if(state.autoRefresh) clearInterval(state.autoRefresh);
+  state = Object.assign(state, {
+    mode:null, baseline:null, byEndereco:null, enderecos:[], contador:'',
+    results:new Map(), enderecoStatus:new Map(), currentEndereco:null, searchTerm:'',
+    countFiles:[], liveEntries:[], concFilter:'ALL', concSearchTerm:'', autoRefresh:null, sheetReachable:null
+  });
+  document.getElementById('homeBtn').style.display = 'none';
+  renderHome();
+}
+
+// ---------- HOME ----------
+function renderHome(){
+  render(`
+    <div class="card" style="margin-bottom:18px;">
+      <p class="muted" style="margin:0;">Contagem cega. Cada endereço salvo já envia sozinho — não precisa exportar nem mandar arquivo pra ninguém.</p>
+    </div>
+    <div class="grid2">
+      <button class="modebtn" onclick="startContagem()">
+        <div class="em">📋</div>
+        <h2>Contagem</h2>
+        <p>Usar durante a contagem física, um aparelho por pessoa. Não mostra o saldo esperado.</p>
+      </button>
+      <button class="modebtn" onclick="startConciliacao()">
+        <div class="em">🔄</div>
+        <h2>Painel / Conciliação</h2>
+        <p>Acompanhar o que já foi contado e ver as divergências reais.</p>
+      </button>
+    </div>
+  `);
+}
+
+// ---------- SHARED: parse baseline xlsx ----------
+function parseBaselineWorkbook(workbook){
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+  return rows.map(r => ({
+    produto: String(r['Produto']||'').trim(),
+    tipo: String(r['Tipo']||'').trim(),
+    embalagem: String(r['Embalagem']||'').trim(),
+    lote: String(r['Lote']||'').trim(),
+    local: String(r['Local']||'').trim(),
+    endereco: String(r['Endereco']||'').trim(),
+    situacao: String(r['Situacao']||'').trim(),
+    saldo: Number(r['Saldo fisico'])
+  })).filter(r => r.produto && r.endereco);
+}
+
+function buildIndexes(){
+  const map = new Map();
+  const pInfo = new Map();
+  const lInfo = new Map(); // lote (uppercased) -> [{produto,tipo,embalagem}] (usually 1, rarely more)
+  state.baseline.forEach(item => {
+    if(!map.has(item.endereco)) map.set(item.endereco, []);
+    map.get(item.endereco).push(item);
+    const norm = item.produto.trim().toLowerCase();
+    if(!pInfo.has(norm)){
+      pInfo.set(norm, {produto:item.produto, tipo:item.tipo, embalagem:item.embalagem, lotes:new Set()});
+    }
+    if(item.lote && item.lote !== '-') pInfo.get(norm).lotes.add(item.lote);
+    if(item.lote && item.lote !== '-'){
+      const loteKey = item.lote.trim().toUpperCase();
+      if(!lInfo.has(loteKey)) lInfo.set(loteKey, []);
+      const existing = lInfo.get(loteKey);
+      if(!existing.some(e => e.produto === item.produto)){
+        existing.push({produto:item.produto, tipo:item.tipo, embalagem:item.embalagem, lote:item.lote});
+      }
+    }
+  });
+  state.byEndereco = map;
+  state.enderecos = Array.from(map.keys()).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  state.produtoList = Array.from(new Set(state.baseline.map(r=>r.produto))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  state.produtoInfo = pInfo;
+  state.loteInfo = lInfo;
+  state.searchList = state.produtoList.concat(Array.from(lInfo.keys()).sort());
+}
+
+// ---------- Google Sheet as shared state (no login, no files) ----------
+function parseCsvLine(line){
+  const out = []; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c = line[i];
+    if(inQ){
+      if(c === '"'){ if(line[i+1] === '"'){ cur+='"'; i++; } else { inQ=false; } }
+      else cur += c;
+    } else {
+      if(c === '"') inQ = true;
+      else if(c === ','){ out.push(cur); cur=''; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+function csvField(v){
+  v = (v===undefined||v===null) ? '' : String(v);
+  if(v.includes(',') || v.includes('"') || v.includes('\n')) return '"' + v.replace(/"/g,'""') + '"';
+  return v;
+}
+
+function cellVal(cell){
+  if(!cell) return '';
+  if(cell.v !== undefined && cell.v !== null) return String(cell.v);
+  if(cell.f !== undefined && cell.f !== null) return String(cell.f);
+  return '';
+}
+
+// Pure parser: turns a google.visualization gviz response object into our entry shape.
+// Kept separate from the network/script-tag loading so it can be tested with a fake response.
+function parseGvizResponse(resp){
+  if(!resp || resp.status === 'error' || !resp.table) return null;
+  const cols = resp.table.cols.map(c => (c.label || c.id || '').trim());
+  const idx = {};
+  cols.forEach((c,i) => { if(c) idx[c] = i; });
+  const need = ['Endereco','Produto','Tipo','Embalagem','Lote','Previsto','QtdContada','Contador'];
+  const hasAll = need.every(n => idx[n] !== undefined);
+  if(!hasAll) return null;
+  const rows = resp.table.rows || [];
+  return rows.map(r => {
+    const c = r.c || [];
+    return {
+      endereco: cellVal(c[idx['Endereco']]).trim(),
+      produto: cellVal(c[idx['Produto']]).trim(),
+      tipo: cellVal(c[idx['Tipo']]).trim(),
+      embalagem: cellVal(c[idx['Embalagem']]).trim(),
+      lote: cellVal(c[idx['Lote']]).trim(),
+      previsto: (cellVal(c[idx['Previsto']]).trim() || 'SIM'),
+      qtd: cellVal(c[idx['QtdContada']]).trim(),
+      contador: cellVal(c[idx['Contador']]).trim()
+    };
+  }).filter(e => e.endereco && e.produto);
+}
+
+let gvizCounter = 0;
+function loadGvizJsonp(timeoutMs){
+  return new Promise((resolve) => {
+    const cbName = 'gvizCb_' + (gvizCounter++) + '_' + Date.now();
+    let settled = false;
+    function finish(val){
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+      delete window[cbName];
+      if(script.parentNode) script.parentNode.removeChild(script);
+      resolve(val);
+    }
+    window[cbName] = (resp) => finish(resp);
+    const script = document.createElement('script');
+    script.src = `https://docs.google.com/spreadsheets/d/${GSHEET_ID}/gviz/tq?tqx=responseHandler:${cbName}&_=${Date.now()}`;
+    script.onerror = () => finish(null);
+    const timer = setTimeout(() => finish(null), timeoutMs || 8000);
+    document.head.appendChild(script);
+  });
+}
+
+async function fetchSheetEntries(){
+  const resp = await loadGvizJsonp();
+  const entries = resp ? parseGvizResponse(resp) : null;
+  if(entries === null){
+    state.sheetReachable = false;
+    return [];
+  }
+  state.sheetReachable = true;
+  return entries;
+}
+
+function submitToSheet(entry){
+  const body = new URLSearchParams();
+  body.set(ENTRY_IDS.endereco, entry.endereco);
+  body.set(ENTRY_IDS.produto, entry.produto);
+  body.set(ENTRY_IDS.tipo, entry.tipo || '');
+  body.set(ENTRY_IDS.embalagem, entry.embalagem || '');
+  body.set(ENTRY_IDS.lote, entry.lote || '-');
+  body.set(ENTRY_IDS.situacao, entry.situacao || '');
+  body.set(ENTRY_IDS.previsto, entry.previsto);
+  body.set(ENTRY_IDS.qtd, String(entry.qtd));
+  body.set(ENTRY_IDS.contador, entry.contador);
+  return fetch(GFORM_SUBMIT_URL, { method:'POST', mode:'no-cors', body })
+    .then(() => true)
+    .catch(() => false);
+}
+
+// ================= CONTAGEM MODE =================
+function startContagem(){
+  state.mode = 'contagem';
+  document.getElementById('homeBtn').style.display = 'inline-block';
+  render(`
+    <button class="backlink" onclick="resetAll()">← Início</button>
+    <div class="card">
+      <h2>Carregar planilha do sistema</h2>
+      <p class="muted">O arquivo "Saldo por endereço" exportado do sistema (.xlsx).</p>
+      <label>Arquivo .xlsx</label>
+      <input type="file" id="baselineFile" accept=".xlsx,.xls">
+    </div>
+    <button class="btn block" id="continueBtn" disabled onclick="confirmContagemSetup()">Continuar</button>
+  `);
+  document.getElementById('baselineFile').addEventListener('change', () => {
+    document.getElementById('continueBtn').disabled = !document.getElementById('baselineFile').files[0];
+  });
+}
+
+function confirmContagemSetup(){
+  const f = document.getElementById('baselineFile').files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      state.baseline = parseBaselineWorkbook(wb);
+      if(state.baseline.length === 0){
+        alert('Não consegui achar linhas válidas nessa planilha. Confere se é o arquivo certo.');
+        return;
+      }
+      buildIndexes();
+      renderContadorSetup();
+    }catch(err){
+      alert('Erro ao ler a planilha: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+function renderContadorSetup(){
+  render(`
+    <button class="backlink" onclick="resetAll()">← Início</button>
+    <div class="card">
+      <h2>Quem está contando?</h2>
+      <label>Seu nome</label>
+      <input type="text" id="contadorName" value="${escapeAttr(state.contador)}" placeholder="Ex: Gabriel">
+      <div style="height:12px;"></div>
+      <button class="btn block" onclick="finishContadorSetup()">Começar a contar</button>
+    </div>
+  `);
+}
+
+async function finishContadorSetup(){
+  state.contador = document.getElementById('contadorName').value.trim() || '(sem nome)';
+  render(`<div class="card"><span class="spinner"></span> Verificando o que já foi contado...</div>`);
+  await refreshEnderecoStatus();
+  renderEnderecoList();
+}
+
+async function refreshEnderecoStatus(){
+  const entries = await fetchSheetEntries();
+  state.liveEntries = entries;
+  const map = new Map();
+  entries.forEach(e => {
+    if(!e.endereco) return;
+    if(!map.has(e.endereco)) map.set(e.endereco, {contadores:new Set(), count:0, lastAt:''});
+    const st = map.get(e.endereco);
+    if(e.contador) st.contadores.add(e.contador);
+    st.count++;
+    if(e.timestamp) st.lastAt = e.timestamp;
+  });
+  state.enderecoStatus = map;
+}
+
+function renderEnderecoList(){
+  const term = state.searchTerm.toLowerCase();
+  const list = state.enderecos.filter(e => e.toLowerCase().includes(term));
+  const rowsHtml = list.map(e => {
+    const items = state.byEndereco.get(e);
+    const st = state.enderecoStatus.get(e);
+    const localCounted = items.filter(it => state.results.has(keyOf(e, it.produto, it.tipo, it.embalagem, it.lote))).length;
+    const total = items.length;
+    let statusHtml;
+    if(st){
+      const contadoresStr = Array.from(st.contadores).join(', ');
+      statusHtml = `<span class="pill ok">CONTADO${contadoresStr && contadoresStr!==state.contador ? ' · '+escapeHtml(contadoresStr) : ''}</span>`;
+    } else if(localCounted > 0){
+      statusHtml = '<span class="pill warn">PARCIAL (aqui)</span>';
+    } else {
+      statusHtml = '<span class="pill muted">PENDENTE</span>';
+    }
+    return `
+      <div class="addr-item" onclick="openEndereco('${escapeAttr(e)}')">
+        <div>
+          <div class="code">${escapeHtml(e)}</div>
+          <div class="count">${total} produto${total===1?'':'s'} previsto${total===1?'':'s'}</div>
+        </div>
+        <div>${statusHtml}</div>
+      </div>`;
+  }).join('');
+
+  const doneEnd = state.enderecoStatus.size;
+  const totalEnd = state.enderecos.length;
+  const connWarn = state.sheetReachable === false
+    ? `<div class="err-box">Não consegui checar a planilha agora (sem internet ou bloqueio). Pode continuar contando — os envios ficam tentando sozinhos — mas confirme a conexão quando puder.</div>` : '';
+
+  render(`
+    <button class="backlink" onclick="resetAll()">← Início</button>
+    ${connWarn}
+    <div class="row between" style="margin-bottom:10px;">
+      <div>
+        <h2 style="margin-bottom:2px;">Endereços</h2>
+        <div class="muted">Contador: <strong>${escapeHtml(state.contador)}</strong> · ${doneEnd}/${totalEnd} já enviados</div>
+      </div>
+      <button class="btn ghost small" onclick="reloadEnderecoList()">↻</button>
+    </div>
+    <div class="search-wrap">
+      <input type="text" id="searchBox" placeholder="Buscar endereço (ex: R2B, PATIO, SAIDA)" value="${escapeAttr(state.searchTerm)}">
+    </div>
+    <div class="addr-list">
+      ${rowsHtml || '<div class="empty">Nenhum endereço encontrado</div>'}
+    </div>
+    <div style="height:14px;"></div>
+    <button class="btn ghost block" onclick="exportContagemBackup()">⬇ Backup manual (se precisar)</button>
+  `);
+  const sb = document.getElementById('searchBox');
+  sb.addEventListener('input', (e) => { state.searchTerm = e.target.value; renderEnderecoList(); });
+  sb.focus();
+  sb.setSelectionRange(sb.value.length, sb.value.length);
+}
+
+async function reloadEnderecoList(){
+  render(`<div class="card"><span class="spinner"></span> Atualizando...</div>`);
+  await refreshEnderecoStatus();
+  renderEnderecoList();
+}
+
+function openEndereco(endereco){
+  state.currentEndereco = endereco;
+  renderEnderecoDetail();
+}
+
+function renderEnderecoDetail(){
+  const endereco = state.currentEndereco;
+  const items = state.byEndereco.get(endereco) || [];
+  const st = state.enderecoStatus.get(endereco);
+  const extras = Array.from(state.results.values()).filter(r => r.endereco===endereco && r.previsto==='NAO');
+
+  const itemsHtml = items.map((it) => {
+    const k = keyOf(endereco, it.produto, it.tipo, it.embalagem, it.lote);
+    const existing = state.results.get(k);
+    const val = existing ? existing.qtd : '';
+    const isEmptyConfirmed = existing && String(existing.qtd) === '0';
+    return `
+      <div class="item-card${isEmptyConfirmed ? ' empty-confirmed' : ''}" data-itemcard="${escapeAttr(k)}">
+        <div class="name">${escapeHtml(it.produto)}</div>
+        <div class="meta">${escapeHtml(it.tipo)} · ${escapeHtml(it.embalagem)} · Lote: ${escapeHtml(it.lote||'-')} · ${escapeHtml(it.situacao)}</div>
+        <label>Quantidade contada</label>
+        <div class="qty-row">
+          <input type="number" inputmode="decimal" step="any" placeholder="Ainda não contado" value="${val}" data-key="${escapeAttr(k)}" class="qtyInput" oninput="onQtyManualInput(this)">
+          <button type="button" class="btn-nada${isEmptyConfirmed ? ' active' : ''}" data-key="${escapeAttr(k)}" onclick="toggleNadaAqui(this)">Nada aqui</button>
+        </div>
+        ${isEmptyConfirmed ? '<div class="empty-tag">✓ CONFIRMADO VAZIO — contado e não encontrado</div>' : ''}
+      </div>`;
+  }).join('');
+
+  const extrasHtml = extras.map(ex => {
+    const k = keyOf(ex.endereco, ex.produto, ex.tipo, ex.embalagem, ex.lote);
+    return `
+      <div class="item-card extra">
+        <div class="row between">
+          <div class="name">${escapeHtml(ex.produto)} <span class="pill warn">NÃO PREVISTO</span></div>
+          <button class="btn ghost small" onclick="removeExtra('${escapeAttr(k)}')">Remover</button>
+        </div>
+        <div class="meta">${escapeHtml(ex.tipo)} · ${escapeHtml(ex.embalagem)} · Lote: ${escapeHtml(ex.lote||'-')}</div>
+        <label>Quantidade contada</label>
+        <input type="number" inputmode="decimal" step="any" value="${ex.qtd}" data-key="${escapeAttr(k)}" class="qtyInput extraInput">
+      </div>`;
+  }).join('');
+
+  render(`
+    <button class="backlink" onclick="renderEnderecoList()">← Endereços</button>
+    ${st ? `<div class="warn-box">Já tem contagem enviada aqui (${Array.from(st.contadores).join(', ')||'?'}). Se você também contar, os dois registros ficam salvos — o painel avisa se os valores baterem ou não.</div>` : ''}
+    <div class="card" style="margin-bottom:10px;">
+      <div class="row between">
+        <h2 class="code" style="font-family:var(--mono);">${escapeHtml(endereco)}</h2>
+        <span class="muted">${items.length} previsto${items.length===1?'':'s'}</span>
+      </div>
+    </div>
+    ${items.length===0 ? '<div class="empty">Nenhum item previsto neste endereço.</div>' : itemsHtml}
+    ${extrasHtml}
+    <button class="btn ghost block" style="margin:10px 0;" onclick="showAddExtraForm()">+ Item encontrado que não estava previsto</button>
+    <div id="extraFormZone"></div>
+    <button class="btn block" id="saveBtn" onclick="saveEndereco()">Salvar</button>
+  `);
+}
+
+function showAddExtraForm(){
+  const zone = document.getElementById('extraFormZone');
+  zone.innerHTML = `
+    <div class="card">
+      <h3>Item não previsto</h3>
+      <label>Produto ou lote (escolha da lista do sistema)</label>
+      <input type="text" id="exProdutoSearch" list="produtoList" placeholder="Digite o nome do produto ou o código do lote...">
+      <datalist id="produtoList">${state.searchList.map(p=>`<option value="${escapeAttr(p)}">`).join('')}</datalist>
+      <div id="exProdutoFeedback" style="margin-top:6px;"></div>
+      <div id="exDetailsZone"></div>
+    </div>
+  `;
+  document.getElementById('exProdutoSearch').addEventListener('input', onExProdutoInput);
+  document.getElementById('exProdutoSearch').addEventListener('change', onExProdutoInput);
+}
+
+function resolveLoteChoice(i){
+  const m = window.__loteChoices[i];
+  document.getElementById('exProdutoSearch').value = m.produto;
+  onExProdutoInput();
+}
+
+function onExProdutoInput(){
+  const raw = document.getElementById('exProdutoSearch').value.trim();
+  const fb = document.getElementById('exProdutoFeedback');
+  const dz = document.getElementById('exDetailsZone');
+  if(!raw){ fb.innerHTML=''; dz.innerHTML=''; return; }
+  const norm = raw.toLowerCase();
+
+  let info = state.produtoInfo.get(norm);
+  let presetLote = null;
+
+  if(!info){
+    const loteMatches = state.loteInfo.get(raw.toUpperCase());
+    if(loteMatches && loteMatches.length === 1){
+      info = state.produtoInfo.get(loteMatches[0].produto.trim().toLowerCase());
+      presetLote = loteMatches[0].lote;
+    } else if(loteMatches && loteMatches.length > 1){
+      fb.innerHTML = `<span class="pill warn">⚠ esse lote aparece em mais de um produto — escolha qual é</span>`;
+      window.__loteChoices = loteMatches;
+      dz.innerHTML = loteMatches.map((m,i) => `
+        <button class="btn ghost block" style="text-align:left; margin-top:6px;" onclick="resolveLoteChoice(${i})">${escapeHtml(m.produto)}</button>
+      `).join('');
+      return;
+    }
+  }
+
+  const currentItems = state.byEndereco.get(state.currentEndereco) || [];
+  if(info){
+    const alreadyExpected = currentItems.some(it => it.produto.trim().toLowerCase() === info.produto.trim().toLowerCase());
+    if(alreadyExpected){
+      fb.innerHTML = `<span class="pill warn">⚠ já está na lista prevista deste endereço</span>`;
+      dz.innerHTML = `<div class="warn-box" style="margin-top:8px;">Esse produto já aparece nos itens previstos aqui em cima — feche esse formulário e digite a quantidade direto no campo dele, em vez de adicionar como extra (senão o valor duplica).</div>`;
+      return;
+    }
+    fb.innerHTML = `<span class="pill ok">✓ encontrado no sistema${presetLote ? ' · identificado pelo lote' : ''}</span>`;
+    const lotes = Array.from(info.lotes).sort();
+    const loteOptions = lotes.map(l => `<option value="${escapeAttr(l)}" ${l===presetLote?'selected':''}>${escapeAttr(l)}</option>`).join('');
+    dz.innerHTML = `
+      <div style="height:8px;"></div>
+      <div class="row" style="gap:8px;">
+        <div style="flex:1;"><label>Tipo</label><input type="text" value="${escapeAttr(info.tipo)}" disabled></div>
+        <div style="flex:1;"><label>Embalagem</label><input type="text" value="${escapeAttr(info.embalagem)}" disabled></div>
+      </div>
+      <div style="height:8px;"></div>
+      <label>Lote</label>
+      ${lotes.length ? `
+        <select id="exLoteSelect">${loteOptions}<option value="__outro__">Outro / não listado</option></select>
+        <div id="exLoteOtherZone"></div>
+      ` : `<input type="text" id="exLoteFree" placeholder="-" value="-">`}
+      <div style="height:8px;"></div>
+      <label>Quantidade contada</label>
+      <input type="number" inputmode="decimal" step="any" id="exQtd">
+      <div style="height:12px;"></div>
+      <button class="btn block" onclick="confirmAddExtra('${escapeAttr(info.produto)}','${escapeAttr(info.tipo)}','${escapeAttr(info.embalagem)}')">Adicionar</button>
+    `;
+    if(lotes.length){
+      document.getElementById('exLoteSelect').addEventListener('change', (e) => {
+        const z = document.getElementById('exLoteOtherZone');
+        z.innerHTML = e.target.value === '__outro__' ? `<div style="height:8px;"></div><input type="text" id="exLoteFree" placeholder="Digite o lote">` : '';
+      });
+    }
+  } else {
+    fb.innerHTML = `<span class="pill warn">⚠ não encontrado no sistema (nem como produto, nem como lote) — confira</span>`;
+    dz.innerHTML = `
+      <div style="height:8px;"></div>
+      <label><input type="checkbox" id="exOverride" style="width:auto; display:inline-block; margin-right:6px;"> Esse produto realmente não existe no sistema (novo)</label>
+      <div id="exOverrideZone"></div>
+    `;
+    document.getElementById('exOverride').addEventListener('change', (e) => {
+      const z = document.getElementById('exOverrideZone');
+      if(e.target.checked){
+        z.innerHTML = `
+          <div style="height:8px;"></div>
+          <div class="row" style="gap:8px;">
+            <div style="flex:1;"><label>Tipo</label><input type="text" id="exTipoFree"></div>
+            <div style="flex:1;"><label>Embalagem</label><input type="text" id="exEmbFree"></div>
+          </div>
+          <div style="height:8px;"></div>
+          <label>Lote</label>
+          <input type="text" id="exLoteFree" value="-">
+          <div style="height:8px;"></div>
+          <label>Quantidade contada</label>
+          <input type="number" inputmode="decimal" step="any" id="exQtd">
+          <div style="height:12px;"></div>
+          <button class="btn block" onclick="confirmAddExtraFreeform('${escapeAttr(raw)}')">Adicionar</button>
+        `;
+      } else { z.innerHTML=''; }
+    });
+  }
+}
+
+function captureCurrentInputs(){
+  const endereco = state.currentEndereco;
+  if(!endereco) return;
+  const inputs = document.querySelectorAll('.qtyInput:not(.extraInput)');
+  const items = state.byEndereco.get(endereco) || [];
+  inputs.forEach(inp => {
+    const key = inp.dataset.key;
+    const val = inp.value;
+    const match = items.find(it => keyOf(endereco,it.produto,it.tipo,it.embalagem,it.lote) === key);
+    if(!match) return;
+    if(val === ''){ state.results.delete(key); return; }
+    state.results.set(key, {
+      endereco, produto: match.produto, tipo: match.tipo, embalagem: match.embalagem, lote: match.lote,
+      situacao: match.situacao, previsto:'SIM', qtd: val, contador: state.contador,
+      datahora: new Date().toISOString()
+    });
+  });
+  document.querySelectorAll('.extraInput').forEach(inp => {
+    const existing = state.results.get(inp.dataset.key);
+    if(existing){ existing.qtd = inp.value; }
+  });
+}
+
+function syncItemCardVisual(input){
+  const card = input.closest('.item-card');
+  if(!card) return;
+  const btn = card.querySelector('.btn-nada');
+  const tagExisting = card.querySelector('.empty-tag');
+  const isZero = input.value !== '' && Number(input.value) === 0;
+  card.classList.toggle('empty-confirmed', isZero);
+  if(btn) btn.classList.toggle('active', isZero);
+  if(isZero && !tagExisting){
+    const tag = document.createElement('div');
+    tag.className = 'empty-tag';
+    tag.textContent = '✓ CONFIRMADO VAZIO — contado e não encontrado';
+    card.appendChild(tag);
+  } else if(!isZero && tagExisting){
+    tagExisting.remove();
+  }
+}
+
+function onQtyManualInput(input){
+  syncItemCardVisual(input);
+}
+
+function toggleNadaAqui(btn){
+  const card = btn.closest('.item-card');
+  const input = card ? card.querySelector('.qtyInput') : null;
+  if(!input) return;
+  const alreadyZero = input.value !== '' && Number(input.value) === 0;
+  input.value = alreadyZero ? '' : '0';
+  syncItemCardVisual(input);
+}
+
+function confirmAddExtra(produto, tipo, emb){
+  const loteSelect = document.getElementById('exLoteSelect');
+  const loteFree = document.getElementById('exLoteFree');
+  let lote = loteSelect ? loteSelect.value : (loteFree ? loteFree.value.trim() : '-');
+  if(lote === '__outro__') lote = (loteFree ? loteFree.value.trim() : '') || 'outro';
+  const qtd = document.getElementById('exQtd').value;
+  if(qtd===''){ alert('Preencha a quantidade.'); return; }
+  captureCurrentInputs();
+  addExtraEntry(produto, tipo, emb, lote || '-', qtd);
+}
+
+function confirmAddExtraFreeform(produto){
+  const tipo = document.getElementById('exTipoFree').value.trim();
+  const emb = document.getElementById('exEmbFree').value.trim();
+  const lote = document.getElementById('exLoteFree').value.trim() || '-';
+  const qtd = document.getElementById('exQtd').value;
+  if(!produto || qtd===''){ alert('Preencha produto e quantidade.'); return; }
+  captureCurrentInputs();
+  addExtraEntry(produto, tipo, emb, lote, qtd, true);
+}
+
+function addExtraEntry(produto, tipo, emb, lote, qtd, isNovo){
+  const endereco = state.currentEndereco;
+  const k = keyOf(endereco, produto, tipo, emb, lote);
+  state.results.set(k, {
+    endereco, produto, tipo, embalagem:emb, lote,
+    situacao: isNovo ? 'PRODUTO_NOVO' : '', previsto:'NAO', qtd, contador: state.contador,
+    datahora: new Date().toISOString()
+  });
+  renderEnderecoDetail();
+}
+
+function removeExtra(key){
+  captureCurrentInputs();
+  state.results.delete(key);
+  renderEnderecoDetail();
+}
+
+
+async function saveEndereco(){
+  const endereco = state.currentEndereco;
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Enviando...';
+
+  captureCurrentInputs();
+
+  const entriesForEndereco = Array.from(state.results.values()).filter(r => r.endereco === endereco);
+  if(!state.submittedSnapshot) state.submittedSnapshot = new Map();
+  const toSubmit = entriesForEndereco.filter(e => {
+    const k = keyOf(e.endereco, e.produto, e.tipo, e.embalagem, e.lote);
+    return state.submittedSnapshot.get(k) !== String(e.qtd);
+  });
+
+  if(toSubmit.length === 0){
+    if(!state.enderecoStatus.has(endereco)) state.enderecoStatus.set(endereco, {contadores:new Set([state.contador]), count:entriesForEndereco.length, lastAt:new Date().toISOString()});
+    renderEnderecoList();
+    return;
+  }
+
+  btn.innerHTML = `<span class="spinner"></span> Enviando ${toSubmit.length} item(ns)...`;
+  const results = await Promise.allSettled(toSubmit.map(entry => submitToSheet(entry)));
+  const anyFail = results.some(r => r.status === 'rejected' || r.value === false);
+
+  if(anyFail){
+    alert('Não consegui confirmar o envio de tudo (pode ter sido falta de internet). Vou baixar um backup desse endereço agora — guarda esse arquivo até confirmar direto na planilha.');
+    exportContagemBackup(endereco);
+  } else {
+    toSubmit.forEach(e => {
+      const k = keyOf(e.endereco, e.produto, e.tipo, e.embalagem, e.lote);
+      state.submittedSnapshot.set(k, String(e.qtd));
+    });
+  }
+
+  if(!state.enderecoStatus.has(endereco)) state.enderecoStatus.set(endereco, {contadores:new Set([state.contador]), count:entriesForEndereco.length, lastAt:new Date().toISOString()});
+  renderEnderecoList();
+}
+
+function exportContagemBackup(onlyEndereco){
+  const header = ['Endereco','Produto','Tipo','Embalagem','Lote','Situacao','Previsto','QtdContada','Contador','DataHora'];
+  const lines = [header.join(',')];
+  state.results.forEach(r => {
+    if(onlyEndereco && r.endereco !== onlyEndereco) return;
+    lines.push([r.endereco,r.produto,r.tipo,r.embalagem,r.lote,r.situacao||'',r.previsto,r.qtd,r.contador,r.datahora].map(csvField).join(','));
+  });
+  downloadText(lines.join('\n'), `contagem_backup_${slug(state.contador)}_${dateStamp()}.csv`, 'text/csv');
+}
+
+function downloadText(text, filename, mime){
+  const blob = new Blob([text], {type: mime + ';charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function parseCountCsv(text, filename){
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length);
+  if(lines.length < 2) return [];
+  const header = parseCsvLine(lines[0]).map(h=>h.trim());
+  const idx = {};
+  header.forEach((h,i) => idx[h]=i);
+  const out = [];
+  for(let i=1;i<lines.length;i++){
+    const cols = parseCsvLine(lines[i]);
+    if(cols.length < header.length) continue;
+    out.push({
+      endereco: cols[idx['Endereco']], produto: cols[idx['Produto']], tipo: cols[idx['Tipo']],
+      embalagem: cols[idx['Embalagem']], lote: cols[idx['Lote']], previsto: cols[idx['Previsto']] || 'SIM',
+      qtd: cols[idx['QtdContada']], contador: cols[idx['Contador']] || '', arquivo: filename
+    });
+  }
+  return out;
+}
+
+// ================= PAINEL / CONCILIAÇÃO =================
+function startConciliacao(){
+  state.mode = 'conciliacao';
+  document.getElementById('homeBtn').style.display = 'inline-block';
+  render(`
+    <button class="backlink" onclick="resetAll()">← Início</button>
+    <div class="card">
+      <h2>Planilha do sistema (baseline)</h2>
+      <p class="muted">A mesma planilha "Saldo por endereço" usada na contagem.</p>
+      <input type="file" id="concBaseline" accept=".xlsx,.xls">
+    </div>
+    <button class="btn block" id="concGoBtn" disabled onclick="loadConciliacao()">Abrir painel</button>
+  `);
+  document.getElementById('concBaseline').addEventListener('change', () => {
+    document.getElementById('concGoBtn').disabled = !document.getElementById('concBaseline').files[0];
+  });
+}
+
+function loadConciliacao(){
+  const bFile = document.getElementById('concBaseline').files[0];
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const wb = XLSX.read(e.target.result, {type:'array'});
+    state.baseline = parseBaselineWorkbook(wb);
+    buildIndexes();
+    renderConciliacaoDash(true);
+  };
+  reader.readAsArrayBuffer(bFile);
+}
+
+async function renderConciliacaoDash(loading){
+  if(loading) render(`<div class="card"><span class="spinner"></span> Buscando contagens na planilha...</div>`);
+  state.liveEntries = await fetchSheetEntries();
+  computeConciliacao();
+}
+
+function computeConciliacao(){
+  const allEntries = state.liveEntries.slice();
+  state.countFiles.forEach(cf => cf.entries.forEach(e => allEntries.push(e)));
+
+  const entriesByKey = new Map();
+  allEntries.forEach(e => {
+    if(!e.endereco || !e.produto) return;
+    const k = keyOf(e.endereco, e.produto, e.tipo, e.embalagem, e.lote);
+    if(!entriesByKey.has(k)) entriesByKey.set(k, []);
+    entriesByKey.get(k).push(e);
+  });
+
+  window.concRows = state.baseline.map(item => {
+    const k = keyOf(item.endereco, item.produto, item.tipo, item.embalagem, item.lote);
+    const matches = entriesByKey.get(k) || [];
+    let status, qtdContada, obs;
+    const contadores = Array.from(new Set(matches.map(m=>m.contador))).filter(Boolean).join(', ');
+    if(matches.length === 0){
+      status = 'NAO_CONTADO'; qtdContada = ''; obs = '';
+    } else {
+      const vals = Array.from(new Set(matches.map(m => Number(m.qtd))));
+      if(vals.length > 1){
+        status = 'CONFLITO'; qtdContada = vals.join(' / '); obs = `${matches.length} contagens com valores diferentes`;
+      } else {
+        qtdContada = vals[0];
+        status = (qtdContada === item.saldo) ? 'OK' : 'DIVERGENTE';
+        obs = matches.length > 1 ? `contado ${matches.length}x (mesmo valor)` : '';
+      }
+    }
+    const diff = (qtdContada==='' || isNaN(Number(qtdContada))) ? '' : (Number(qtdContada) - item.saldo);
+    return {endereco:item.endereco, produto:item.produto, tipo:item.tipo, embalagem:item.embalagem, lote:item.lote,
+      situacao:item.situacao, saldo:item.saldo, qtdContada, diff, status, obs, contadores};
+  });
+
+  window.concExtras = [];
+  entriesByKey.forEach((matches, k) => {
+    const inBaseline = state.baseline.some(item => keyOf(item.endereco,item.produto,item.tipo,item.embalagem,item.lote) === k);
+    if(!inBaseline){
+      const sample = matches[0];
+      const extraQtyVals = Array.from(new Set(matches.map(m=>Number(m.qtd))));
+      const extraQty = extraQtyVals.length ? Math.max(...extraQtyVals) : 0;
+      let hintEndereco = '', hintSaldo = '', hintNote = '', hintConflict = false;
+
+      function statusOfBaselineItem(item){
+        const kk = keyOf(item.endereco, item.produto, item.tipo, item.embalagem, item.lote);
+        const m = entriesByKey.get(kk);
+        if(!m) return {counted:false};
+        const vals = Array.from(new Set(m.map(x=>Number(x.qtd))));
+        if(vals.length>1) return {counted:true, conflito:true};
+        return {counted:true, qtd:vals[0], deficit: item.saldo - vals[0]};
+      }
+
+      let candidates;
+      if(sample.lote && sample.lote !== '-'){
+        candidates = state.baseline.filter(item => item.produto===sample.produto && item.lote===sample.lote);
+      } else {
+        const hits = state.baseline.filter(item => item.produto===sample.produto);
+        const distinctEnderecos = Array.from(new Set(hits.map(h=>h.endereco)));
+        candidates = distinctEnderecos.length === 1 ? hits.slice(0,1) : [];
+      }
+
+      if(candidates.length){
+        const withStatus = candidates.map(item => ({item, st: statusOfBaselineItem(item)}));
+        const exact = withStatus.filter(x => x.st.counted && !x.st.conflito && x.st.deficit===0);
+        const shortfall = withStatus.filter(x => x.st.counted && !x.st.conflito && x.st.deficit>0).sort((a,b)=>b.st.deficit-a.st.deficit);
+        const unknown = withStatus.filter(x => !x.st.counted);
+        const best = shortfall[0] || unknown[0];
+        if(best && shortfall[0] && shortfall[0].st.deficit < extraQty*0.5){
+          hintEndereco = best.item.endereco; hintSaldo = best.item.saldo;
+          hintNote = `falta de apenas ${shortfall[0].st.deficit} lá — bem menor que os ${extraQty} aqui, pode não explicar tudo`;
+          hintConflict = true;
+        } else if(best){
+          hintEndereco = best.item.endereco; hintSaldo = best.item.saldo;
+          if(shortfall[0]) hintNote = `essa rua foi contada com falta de ${shortfall[0].st.deficit} — provável origem`;
+        } else if(exact.length){
+          hintNote = `CONFLITO: mesmo lote também contado e CONFIRMADO em ${exact[0].item.endereco} (bateu exato) — NÃO mover de lá.`;
+          hintConflict = true;
+        } else {
+          hintNote = `CONFLITO: mesmo lote consta em ${candidates.length} endereço(s), nenhum com falta — excesso físico não explicado.`;
+          hintConflict = true;
+        }
+      }
+      window.concExtras.push({
+        endereco: sample.endereco, produto: sample.produto, tipo: sample.tipo, embalagem: sample.embalagem, lote: sample.lote,
+        qtdContada: matches.map(m=>m.qtd).join(' / '),
+        contadores: Array.from(new Set(matches.map(m=>m.contador))).filter(Boolean).join(', '),
+        hintEndereco, hintSaldo, hintNote, hintConflict
+      });
+    }
+  });
+
+  // Product-level rollup: sums a produto across ALL its addresses (system + extras).
+  // Answers: "does this look like a real shortage, or just split across addresses?"
+  const byProduto = new Map();
+  window.concRows.forEach(r => {
+    if(!byProduto.has(r.produto)) byProduto.set(r.produto, {rows:[], extras:[]});
+    byProduto.get(r.produto).rows.push(r);
+  });
+  window.concExtras.forEach(r => {
+    if(!byProduto.has(r.produto)) byProduto.set(r.produto, {rows:[], extras:[]});
+    byProduto.get(r.produto).extras.push(r);
+  });
+  window.concProdutoRollup = [];
+  byProduto.forEach((data, produto) => {
+    const hasIssue = data.rows.some(r => r.status==='DIVERGENTE') || data.extras.length>0;
+    if(!hasIssue) return;
+    const isNaoCadastrado = data.rows.length === 0;
+    const reliable = data.rows.every(r => r.status==='OK' || r.status==='DIVERGENTE');
+    const totalEsperado = data.rows.reduce((s,r)=>s+Number(r.saldo),0);
+    const totalRegular = data.rows.reduce((s,r)=> s + (r.status==='NAO_CONTADO'||r.status==='CONFLITO' ? 0 : Number(r.qtdContada)||0), 0);
+    const totalExtras = data.extras.reduce((s,r)=> s + (Number(String(r.qtdContada).split('/')[0])||0), 0);
+    const totalContado = totalRegular + totalExtras;
+    const diffTotal = totalContado - totalEsperado;
+    let status;
+    if(isNaoCadastrado) status = 'NAO_CADASTRADO';
+    else if(!reliable) status = 'INCOMPLETO';
+    else if(Math.abs(diffTotal) < 0.01) status = 'BATE_NO_TOTAL';
+    else if(diffTotal < 0) status = 'FALTA_REAL';
+    else status = 'SOBRA_REAL';
+    window.concProdutoRollup.push({
+      produto, totalEsperado, totalContado, diffTotal, status,
+      enderecosCount: data.rows.length, extrasCount: data.extras.length
+    });
+  });
+
+  const countedRows = window.concRows.filter(r => r.status !== 'NAO_CONTADO');
+  const okRows = countedRows.filter(r => r.status === 'OK');
+  const sumAbsDiff = countedRows.reduce((s,r) => s + Math.abs(Number(r.diff)||0), 0);
+  const sumSaldoCounted = countedRows.reduce((s,r) => s + Number(r.saldo), 0);
+  window.concAccuracy = {
+    coverage: window.concRows.length ? (countedRows.length / window.concRows.length * 100) : null,
+    skuAccuracy: countedRows.length ? (okRows.length / countedRows.length * 100) : null,
+    qtyAccuracy: sumSaldoCounted > 0 ? Math.max(0, (1 - sumAbsDiff/sumSaldoCounted) * 100) : null,
+    countedN: countedRows.length, totalN: window.concRows.length,
+    sumAbsDiff, sumSaldoCounted, extrasN: window.concExtras.length
+  };
+
+  computeMovements(entriesByKey);
+
+  state.concFilter = state.concFilter || 'ALL';
+  renderConciliacaoResult();
+}
+
+function computeMovements(entriesByKey){
+  const groups = new Map(); // gk -> {produto,tipo,embalagem,lote, items:[baseline], extras:[{endereco,qtd}]}
+  function gkOf(produto,tipo,embalagem,lote){ return [produto,tipo,embalagem,lote].join('¦'); }
+
+  state.baseline.forEach(item => {
+    const gk = gkOf(item.produto,item.tipo,item.embalagem,item.lote);
+    if(!groups.has(gk)) groups.set(gk, {produto:item.produto,tipo:item.tipo,embalagem:item.embalagem,lote:item.lote, items:[], extras:[]});
+    groups.get(gk).items.push(item);
+  });
+  window.concExtras.forEach(ex => {
+    const gk = gkOf(ex.produto,ex.tipo,ex.embalagem,ex.lote);
+    if(!groups.has(gk)) groups.set(gk, {produto:ex.produto,tipo:ex.tipo,embalagem:ex.embalagem,lote:ex.lote, items:[], extras:[]});
+    const vals = String(ex.qtdContada).split(' / ').map(Number);
+    const qty = vals.length>1 ? Math.max(...vals) : vals[0];
+    groups.get(gk).extras.push({endereco: ex.endereco, qtd: qty});
+  });
+
+  window.movTransfers = []; window.movS1 = []; window.movVerificar = [];
+
+  groups.forEach((g) => {
+    const deficits = [], excesses = [];
+    const uncountedAddrs = [], conflitoAddrs = [];
+    g.items.forEach(b => {
+      const k = keyOf(b.endereco,b.produto,b.tipo,b.embalagem,b.lote);
+      const m = entriesByKey.get(k);
+      if(!m){ uncountedAddrs.push(b.endereco); return; }
+      const vals = Array.from(new Set(m.map(x=>Number(x.qtd))));
+      if(vals.length>1){ conflitoAddrs.push(b.endereco); return; }
+      const diff = vals[0] - b.saldo;
+      if(diff < -0.01) deficits.push({endereco:b.endereco, amt:-diff});
+      else if(diff > 0.01) excesses.push({endereco:b.endereco, amt:diff});
+    });
+    g.extras.forEach(ex => excesses.push({endereco: ex.endereco, amt: ex.qtd}));
+
+    const isNovo = g.items.length===0;
+    const uncountedAny = uncountedAddrs.length>0, conflitoAny = conflitoAddrs.length>0;
+    deficits.sort((a,b)=>b.amt-a.amt); excesses.sort((a,b)=>b.amt-a.amt);
+    let di=0, ei=0;
+    while(di<deficits.length && ei<excesses.length){
+      const mv = Math.min(deficits[di].amt, excesses[ei].amt);
+      if(mv>0.01) window.movTransfers.push({qtd:Math.round(mv*100)/100, origem:deficits[di].endereco, destino:excesses[ei].endereco, produto:g.produto, tipo:g.tipo, embalagem:g.embalagem, lote:g.lote});
+      deficits[di].amt -= mv; excesses[ei].amt -= mv;
+      if(deficits[di].amt<=0.01) di++;
+      if(excesses[ei].amt<=0.01) ei++;
+    }
+    const leftoverDefList = deficits.slice(di).filter(d=>d.amt>0.01);
+    const leftoverExcList = excesses.slice(ei).filter(e=>e.amt>0.01);
+    const leftoverDef = leftoverDefList.reduce((s,d)=>s+d.amt,0);
+    const leftoverExc = leftoverExcList.reduce((s,e)=>s+e.amt,0);
+    const fmtAddrs = (list) => list.map(x=>`${x.endereco} (${x.amt.toFixed(0)} kg)`).join(', ');
+
+    if(leftoverDef>0.01){
+      if(!uncountedAny) window.movS1.push({qtd:Math.round(leftoverDef*100)/100, produto:g.produto, tipo:g.tipo, embalagem:g.embalagem, lote:g.lote, enderecos: fmtAddrs(leftoverDefList)});
+      else window.movVerificar.push({produto:g.produto, lote:g.lote, motivo:'Falta parcial, mas há endereço(s) desse lote ainda não contados',
+        detalhe:`Falta confirmada em: ${fmtAddrs(leftoverDefList)}. Endereço(s) não conferido(s) nessa rodada: ${uncountedAddrs.join(', ')}`});
+    }
+    if(leftoverExc>0.01){
+      window.movVerificar.push({produto:g.produto, lote:g.lote, motivo: isNovo? 'Produto/lote não cadastrado no sistema' : 'Sobra não explicada por transferência',
+        detalhe: isNovo ? `Achado em: ${fmtAddrs(leftoverExcList)}` : `Sobra em: ${fmtAddrs(leftoverExcList)} — sem endereço com falta correspondente`});
+    }
+    if(conflitoAny) window.movVerificar.push({produto:g.produto, lote:g.lote, motivo:'Contagens conflitantes em algum endereço', detalhe:`Endereço(s): ${conflitoAddrs.join(', ')}`});
+  });
+}
+
+function statusPill(s, diff){
+  if(s === 'DIVERGENTE'){
+    const isMais = Number(diff) > 0;
+    return `<span class="pill ${isMais?'warn':'bad'}">${isMais?'MATERIAL A MAIS':'MATERIAL A MENOS'}</span>`;
+  }
+  const map = {OK:'ok', NAO_CONTADO:'muted', CONFLITO:'warn'};
+  const label = {OK:'OK', NAO_CONTADO:'NÃO CONTADO', CONFLITO:'CONFLITO'};
+  return `<span class="pill ${map[s]}">${label[s]}</span>`;
+}
+function setConcFilter(f){ state.concFilter = f; renderConciliacaoResult(); }
+
+function pct(n){ return (n===null || n===undefined || isNaN(n)) ? '—' : n.toFixed(1) + '%'; }
+
+function renderAccuracyCard(acc){
+  if(!acc || acc.countedN === 0) return `<div class="card"><p class="muted" style="margin:0;">Ainda não há nada contado pra calcular acurácia.</p></div>`;
+  return `
+    <div class="card">
+      <h3 style="margin-bottom:10px;">Acurácia do inventário</h3>
+      <div class="summary-grid">
+        <div class="stat"><div class="num">${pct(acc.coverage)}</div><div class="lbl">Cobertura contada</div></div>
+        <div class="stat"><div class="num">${pct(acc.skuAccuracy)}</div><div class="lbl">Acerto por item</div></div>
+        <div class="stat"><div class="num">${pct(acc.qtyAccuracy)}</div><div class="lbl">Acerto por quantidade</div></div>
+      </div>
+      <p class="muted" style="margin:10px 0 0; font-size:12px; line-height:1.5;">
+        <strong>Cobertura</strong>: quanto do total já foi contado (${acc.countedN} de ${acc.totalN}).
+        <strong>Acerto por item</strong>: dos itens já contados, quantos bateram exatamente com o sistema.
+        <strong>Acerto por quantidade</strong>: pondera pelo peso — um erro de 25kg pesa menos que um de 1500kg, mesmo contando como "1 divergência" nos dois casos.
+        Nenhuma das três conta os ${acc.extrasN} item(ns) extra (isso é acurácia de local, não de quantidade).
+      </p>
+    </div>`;
+}
+
+function renderMovimentacoesBlock(){
+  const t = window.movTransfers || [], s1 = window.movS1 || [], ver = window.movVerificar || [];
+  const transferRows = t.map(x => `
+    <tr><td>${x.qtd}</td><td class="mono">${escapeHtml(x.origem)}</td><td class="mono">${escapeHtml(x.destino)}</td>
+    <td>${escapeHtml(x.produto)}<br><span class="muted">${escapeHtml(x.tipo)} · ${escapeHtml(x.embalagem)} · ${escapeHtml(x.lote)}</span></td></tr>`).join('');
+  const s1Rows = s1.map(x => `
+    <tr><td>${x.qtd}</td><td>${escapeHtml(x.produto)}<br><span class="muted">${escapeHtml(x.tipo)} · ${escapeHtml(x.embalagem)} · ${escapeHtml(x.lote)}</span></td><td class="mono">${escapeHtml(x.enderecos||'')}</td></tr>`).join('');
+  const verRows = ver.map(x => `
+    <tr><td>${escapeHtml(x.produto)}</td><td class="mono">${escapeHtml(x.lote)}</td><td class="muted">${escapeHtml(x.motivo)}${x.detalhe?' — '+escapeHtml(x.detalhe):''}</td></tr>`).join('');
+  return `
+    <p class="muted" style="margin-bottom:10px;">Só entram aqui casos com evidência física dos dois lados (falta confirmada num endereço + sobra confirmada em outro, ou falta confirmada em todos os endereços do produto). O resto cai em "verificar" — sem contagem a mais, não dá pra confiar numa sugestão automática.</p>
+    <h3 style="margin-bottom:8px;">🔀 Transferências (${t.length})</h3>
+    <div class="table-wrap" style="margin-bottom:20px;">
+      <table><thead><tr><th>Qtd</th><th>De</th><th>Para</th><th>Produto</th></tr></thead>
+      <tbody>${transferRows || '<tr><td colspan="4" class="empty">Nenhuma</td></tr>'}</tbody></table>
+    </div>
+    <h3 style="margin-bottom:8px;">🗑️ Ajustar para S1 (${s1.length})</h3>
+    <div class="table-wrap" style="margin-bottom:20px;">
+      <table><thead><tr><th>Qtd</th><th>Produto</th><th>Endereço(s)</th></tr></thead>
+      <tbody>${s1Rows || '<tr><td colspan="3" class="empty">Nenhum</td></tr>'}</tbody></table>
+    </div>
+    <h3 style="margin-bottom:8px;">⚠ Verificar manualmente (${ver.length})</h3>
+    <div class="table-wrap" style="margin-bottom:14px;">
+      <table><thead><tr><th>Produto</th><th>Lote</th><th>Motivo</th></tr></thead>
+      <tbody>${verRows || '<tr><td colspan="3" class="empty">Nenhum</td></tr>'}</tbody></table>
+    </div>
+    <button class="btn block" onclick="exportMovimentacoesXlsx()">⬇ Baixar movimentações (.xlsx)</button>
+  `;
+}
+
+function exportMovimentacoesXlsx(){
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((window.movTransfers||[]).map(t=>({'Quantidade':t.qtd,'De':t.origem,'Para':t.destino,'Produto':t.produto,'Tipo':t.tipo,'Embalagem':t.embalagem,'Lote':t.lote}))), 'Transferencias');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((window.movS1||[]).map(s=>({'Quantidade':s.qtd,'Produto':s.produto,'Tipo':s.tipo,'Embalagem':s.embalagem,'Lote':s.lote,'Endereco(s)':s.enderecos||'','Ajustar para':'S1'}))), 'Ajustar S1');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet((window.movVerificar||[]).map(v=>({'Produto':v.produto,'Lote':v.lote,'Motivo':v.motivo,'Detalhe':v.detalhe}))), 'Verificar');
+  XLSX.writeFile(wb, `movimentacoes_${SITE.nome}_${dateStamp()}.xlsx`);
+}
+
+function renderBuscaBlock(){
+  const term = (state.concSearchTerm||'').toLowerCase().trim();
+  const concRows = window.concRows || [];
+  const concExtras = window.concExtras || [];
+  let resultsHtml = '<div class="empty">Digite um produto ou lote pra buscar</div>';
+  if(term){
+    const matchRows = concRows.filter(r => r.produto.toLowerCase().includes(term) || (r.lote && r.lote.toLowerCase().includes(term)));
+    const matchExtras = concExtras.filter(r => r.produto.toLowerCase().includes(term) || (r.lote && r.lote.toLowerCase().includes(term)));
+    const rows = matchRows.map(r => {
+      const isMais = r.status==='DIVERGENTE' && Number(r.diff) > 0;
+      const cls = r.status==='DIVERGENTE' ? (isMais?'status-MAIS':'status-MENOS') : `status-${r.status}`;
+      return `
+      <tr class="${cls}">
+        <td class="mono">${escapeHtml(r.endereco)}</td>
+        <td>${escapeHtml(r.produto)}<br><span class="muted">${escapeHtml(r.tipo)} · ${escapeHtml(r.embalagem)} · ${escapeHtml(r.lote)}</span></td>
+        <td>${r.saldo}</td><td>${escapeHtml(String(r.qtdContada))}</td><td>${r.diff===''?'':r.diff}</td>
+        <td>${statusPill(r.status, r.diff)}</td>
+      </tr>`;}).join('');
+    const extraRowsHtml = matchExtras.map(r => `
+      <tr>
+        <td class="mono">${escapeHtml(r.endereco)}</td>
+        <td>${escapeHtml(r.produto)}<br><span class="muted">${escapeHtml(r.tipo)} · ${escapeHtml(r.embalagem)} · ${escapeHtml(r.lote)}</span></td>
+        <td>—</td><td>${escapeHtml(String(r.qtdContada))}</td><td>—</td>
+        <td><span class="pill ${r.hintConflict?'bad':'warn'}">EXTRA</span></td>
+      </tr>`).join('');
+    const total = matchRows.length + matchExtras.length;
+    resultsHtml = total ? `
+      <p class="muted" style="margin-bottom:8px;">${total} resultado(s) para "${escapeHtml(term)}"</p>
+      <div class="table-wrap">
+        <table><thead><tr><th>Endereço</th><th>Produto</th><th>Saldo sistema</th><th>Contado</th><th>Dif.</th><th>Status</th></tr></thead>
+        <tbody>${rows}${extraRowsHtml}</tbody></table>
+      </div>` : `<div class="empty">Nenhum resultado para "${escapeHtml(term)}"</div>`;
+  }
+  return `
+    <input type="text" id="buscaBox" placeholder="Nome do produto ou código do lote..." value="${escapeAttr(state.concSearchTerm||'')}" style="margin-bottom:12px;">
+    <div id="buscaResults">${resultsHtml}</div>
+  `;
+}
+
+function renderConciliacaoResult(){
+  const concRows = window.concRows || [];
+  const concExtras = window.concExtras || [];
+  const total = concRows.length;
+  const ok = concRows.filter(r=>r.status==='OK').length;
+  const div = concRows.filter(r=>r.status==='DIVERGENTE').length;
+  const nao = concRows.filter(r=>r.status==='NAO_CONTADO').length;
+  const conf = concRows.filter(r=>r.status==='CONFLITO').length;
+
+  const filter = state.concFilter;
+  const filtered = filter==='ALL' ? concRows : (filter==='EXTRAS' ? [] : concRows.filter(r=>r.status===filter));
+
+  const produtoStatusMap = new Map((window.concProdutoRollup||[]).map(r => [r.produto, r.status]));
+  const tableRows = filtered.map(r => {
+    const bateNoTotal = r.status==='DIVERGENTE' && produtoStatusMap.get(r.produto)==='BATE_NO_TOTAL';
+    let dispClass, dispStatus, dispObs;
+    if(bateNoTotal){
+      dispClass = 'status-REALOCADO';
+      dispStatus = '<span class="pill neutral">REALOCADO</span>';
+      dispObs = 'bate no total do produto — mal alocado, não é falta real';
+    } else if(r.status === 'DIVERGENTE'){
+      const isMais = Number(r.diff) > 0;
+      dispClass = isMais ? 'status-MAIS' : 'status-MENOS';
+      dispStatus = statusPill(r.status, r.diff);
+      dispObs = r.obs;
+    } else {
+      dispClass = `status-${r.status}`;
+      dispStatus = statusPill(r.status);
+      dispObs = r.obs;
+    }
+    return `
+    <tr class="${dispClass}">
+      <td class="mono">${escapeHtml(r.endereco)}</td>
+      <td>${escapeHtml(r.produto)}<br><span class="muted">${escapeHtml(r.tipo)} · ${escapeHtml(r.embalagem)} · ${escapeHtml(r.lote)}</span></td>
+      <td>${r.saldo}</td>
+      <td>${escapeHtml(String(r.qtdContada))}</td>
+      <td>${r.diff===''?'':r.diff}</td>
+      <td>${dispStatus}</td>
+      <td class="muted">${escapeHtml(dispObs)}${r.contadores?' · '+escapeHtml(r.contadores):''}</td>
+    </tr>`;}).join('');
+
+  const doneCount = concExtras.filter(r => state.extrasDone.has(extraKey(r))).length;
+  const produtoRollup = window.concProdutoRollup || [];
+  const produtoStatusLabel = {BATE_NO_TOTAL:'Bate no total (troca de endereço)', FALTA_REAL:'Falta real', SOBRA_REAL:'Sobra real', INCOMPLETO:'Incompleto', NAO_CADASTRADO:'Não cadastrado'};
+  const produtoStatusClass = {BATE_NO_TOTAL:'neutral', FALTA_REAL:'bad', SOBRA_REAL:'warn', INCOMPLETO:'muted', NAO_CADASTRADO:'muted'};
+  const produtoRows = produtoRollup.map(r => `
+    <tr>
+      <td>${escapeHtml(r.produto)}</td>
+      <td>${r.totalEsperado}</td>
+      <td>${r.totalContado}</td>
+      <td>${r.diffTotal}</td>
+      <td><span class="pill ${produtoStatusClass[r.status]}">${produtoStatusLabel[r.status]}</span></td>
+    </tr>`).join('');
+  const sortedExtras = concExtras.slice().sort((a,b) => {
+    const da = state.extrasDone.has(extraKey(a)) ? 1 : 0;
+    const db = state.extrasDone.has(extraKey(b)) ? 1 : 0;
+    return da - db;
+  });
+  const extrasActionList = sortedExtras.map(r => {
+    const k = extraKey(r);
+    const isDone = state.extrasDone.has(k);
+    const label = `${escapeHtml(r.produto)}${r.lote && r.lote!=='-' ? ' · lote '+escapeHtml(r.lote) : ''} — ${escapeHtml(String(r.qtdContada))}`;
+    let action;
+    if(r.hintEndereco && !r.hintConflict){
+      action = `Mover de <strong>${escapeHtml(r.hintEndereco)}</strong> → <strong>${escapeHtml(r.endereco)}</strong> no sistema`;
+    } else if(r.hintConflict){
+      action = `<span style="color:var(--bad);">⚠ ${escapeHtml(r.hintNote)}</span> — verificar manualmente antes de mexer no sistema.`;
+    } else {
+      action = `Achado em <strong>${escapeHtml(r.endereco)}</strong>, não consta em nenhum endereço do sistema — conferir se é produto novo ou erro de cadastro`;
+    }
+    return `
+      <div class="item-card" style="margin-bottom:8px; ${isDone ? 'opacity:.5;' : ''}">
+        <label class="row" style="align-items:flex-start; gap:10px; cursor:pointer;">
+          <input type="checkbox" ${isDone?'checked':''} onchange="toggleExtraDone('${escapeAttr(k)}')" style="width:20px; height:20px; margin-top:2px; flex-shrink:0;">
+          <div style="flex:1;">
+            <div class="name" style="${isDone?'text-decoration:line-through;':''}">${label}</div>
+            <div class="meta" style="font-family:inherit; margin-top:4px;">${action}</div>
+            ${r.contadores ? `<div class="muted" style="margin-top:4px; font-size:12px;">Contado por ${escapeHtml(r.contadores)}</div>` : ''}
+          </div>
+        </label>
+      </div>`;
+  }).join('');
+
+  const connWarn = state.sheetReachable === false
+    ? `<div class="err-box">Não consegui ler a planilha publicada agora daqui. Abra a planilha direto no Google Sheets pra conferir manualmente, ou tente "Atualizar" de novo — pode ser conexão momentânea.<br><a href="${GSHEET_VIEW_URL}" target="_blank" rel="noopener">Abrir planilha no Google Sheets →</a></div>` : '';
+
+  render(`
+    <button class="backlink" onclick="resetAll()">← Início</button>
+    <div class="row between" style="margin-bottom:6px;">
+      <h2 style="margin-bottom:0;">Painel</h2>
+      <button class="btn secondary small" onclick="renderConciliacaoDash(true)">↻ Atualizar</button>
+    </div>
+    ${connWarn}
+    <label style="margin:10px 0 4px; display:block;"><input type="checkbox" id="autoRefreshChk" style="width:auto;display:inline-block;margin-right:6px;" ${state.autoRefresh?'checked':''}> Atualizar sozinho a cada 30s</label>
+    <div class="summary-grid" style="margin-top:10px;">
+      <div class="stat"><div class="num">${ok}</div><div class="lbl">OK</div></div>
+      <div class="stat"><div class="num" style="color:var(--bad)">${div}</div><div class="lbl">Divergente</div></div>
+      <div class="stat"><div class="num" style="color:var(--muted)">${nao}</div><div class="lbl">Não contado</div></div>
+      <div class="stat"><div class="num" style="color:var(--warn)">${conf}</div><div class="lbl">Conflito</div></div>
+    </div>
+    ${renderAccuracyCard(window.concAccuracy)}
+    ${concExtras.length ? `<div class="warn-box">⚠ ${concExtras.length} item(ns) contados fora do previsto — veja o filtro "Extras".</div>` : ''}
+    <div class="filterbar">
+      <button class="${filter==='ALL'?'active':''}" onclick="setConcFilter('ALL')">Todos (${total})</button>
+      <button class="${filter==='DIVERGENTE'?'active':''}" onclick="setConcFilter('DIVERGENTE')">Material a mais/menos (${div})</button>
+      <button class="${filter==='NAO_CONTADO'?'active':''}" onclick="setConcFilter('NAO_CONTADO')">Não contados (${nao})</button>
+      <button class="${filter==='CONFLITO'?'active':''}" onclick="setConcFilter('CONFLITO')">Conflitos (${conf})</button>
+      <button class="${filter==='EXTRAS'?'active':''}" onclick="setConcFilter('EXTRAS')">Extras (${concExtras.length})</button>
+      <button class="${filter==='PRODUTO'?'active':''}" onclick="setConcFilter('PRODUTO')">Por produto (${produtoRollup.length})</button>
+      <button class="${filter==='ACOES'?'active':''}" onclick="setConcFilter('ACOES')">📌 Movimentações a fazer</button>
+      <button class="${filter==='BUSCA'?'active':''}" onclick="setConcFilter('BUSCA')">🔎 Buscar material/lote</button>
+    </div>
+    <div class="table-wrap" style="${filter==='EXTRAS'||filter==='PRODUTO'||filter==='ACOES'||filter==='BUSCA' ? 'display:none;' : ''}">
+      <table>
+        <thead><tr><th>Endereço</th><th>Produto</th><th>Saldo sistema</th><th>Contado</th><th>Dif.</th><th>Status</th><th>Obs.</th></tr></thead>
+        <tbody>${tableRows || '<tr><td colspan="7" class="empty">Nenhum item nesse filtro</td></tr>'}</tbody>
+      </table>
+    </div>
+    ${filter==='EXTRAS' ? `
+      ${concExtras.length ? `<div class="muted" style="margin-bottom:10px;">${doneCount}/${concExtras.length} já resolvidos no sistema</div>` : ''}
+      ${extrasActionList || '<div class="empty">Nenhum item extra</div>'}
+      ${concExtras.length ? `
+        <div class="row" style="gap:8px; margin-top:10px;">
+          <button class="btn ghost small" onclick="saveExtrasProgress()">⬇ Salvar progresso</button>
+          <label class="btn ghost small" style="cursor:pointer;">
+            ⬆ Carregar progresso
+            <input type="file" id="progressFile" accept=".json" style="display:none;" onchange="loadExtrasProgress()">
+          </label>
+        </div>` : ''}
+    ` : ''}
+    ${filter==='PRODUTO' ? `
+      <p class="muted" style="margin-bottom:10px;">Soma o produto em todos os endereços do sistema (incluindo os itens extras) — mostra se a diferença é falta de verdade ou só está em outro endereço.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Produto</th><th>Total esperado</th><th>Total contado</th><th>Dif. total</th><th>Status</th></tr></thead>
+          <tbody>${produtoRows || '<tr><td colspan="5" class="empty">Nenhum produto com divergência ou extra</td></tr>'}</tbody>
+        </table>
+      </div>
+    ` : ''}
+    ${filter==='ACOES' ? renderMovimentacoesBlock() : ''}
+    ${filter==='BUSCA' ? renderBuscaBlock() : ''}
+    <div style="height:14px;"></div>
+    <details class="card">
+      <summary style="cursor:pointer; font-weight:700;">+ Juntar backup manual (opcional)</summary>
+      <div style="height:8px;"></div>
+      <p class="muted">Só necessário se algum aparelho ficou sem internet e baixou um backup CSV localmente.</p>
+      <input type="file" id="concCounts" accept=".csv" multiple>
+      <div style="height:8px;"></div>
+      <button class="btn ghost block" onclick="mergeExtraCsvs()">Juntar ao painel</button>
+    </details>
+    <div style="height:14px;"></div>
+    <button class="btn block" onclick="exportConciliacaoXlsx()">⬇ Baixar relatório completo (.xlsx)</button>
+  `);
+  document.getElementById('autoRefreshChk').addEventListener('change', (e) => {
+    if(e.target.checked){ state.autoRefresh = setInterval(() => renderConciliacaoDash(false), 30000); }
+    else { clearInterval(state.autoRefresh); state.autoRefresh = null; }
+  });
+  if(filter === 'BUSCA'){
+    const bb = document.getElementById('buscaBox');
+    bb.addEventListener('input', (e) => { state.concSearchTerm = e.target.value; renderConciliacaoResult(); });
+    bb.focus();
+    bb.setSelectionRange(bb.value.length, bb.value.length);
+  }
+}
+
+function mergeExtraCsvs(){
+  const files = Array.from(document.getElementById('concCounts').files);
+  if(!files.length) return;
+  let pending = files.length;
+  files.forEach(f => {
+    const r = new FileReader();
+    r.onload = (e) => {
+      state.countFiles.push({name:f.name, entries: parseCountCsv(e.target.result, f.name)});
+      pending--;
+      if(pending===0) computeConciliacao();
+    };
+    r.readAsText(f, 'UTF-8');
+  });
+}
+
+function exportConciliacaoXlsx(){
+  const concRows = window.concRows || [];
+  const concExtras = window.concExtras || [];
+  const acc = window.concAccuracy || {};
+  const summaryData = [
+    {Metrica: 'Cobertura contada (%)', Valor: acc.coverage!==null&&acc.coverage!==undefined ? acc.coverage.toFixed(1) : ''},
+    {Metrica: 'Acerto por item (%)', Valor: acc.skuAccuracy!==null&&acc.skuAccuracy!==undefined ? acc.skuAccuracy.toFixed(1) : ''},
+    {Metrica: 'Acerto por quantidade (%)', Valor: acc.qtyAccuracy!==null&&acc.qtyAccuracy!==undefined ? acc.qtyAccuracy.toFixed(1) : ''},
+    {Metrica: 'Itens contados', Valor: acc.countedN||0},
+    {Metrica: 'Total de itens no sistema', Valor: acc.totalN||0},
+    {Metrica: 'Itens extra (fora do previsto)', Valor: acc.extrasN||0}
+  ];
+  const mainData = concRows.map(r => ({
+    'Endereco': r.endereco, 'Produto': r.produto, 'Tipo': r.tipo, 'Embalagem': r.embalagem, 'Lote': r.lote,
+    'Situacao': r.situacao, 'Saldo Sistema': r.saldo, 'Qtd Contada': r.qtdContada, 'Diferenca': r.diff,
+    'Status': r.status, 'Observacao': r.obs, 'Contador(es)': r.contadores
+  }));
+  const extrasData = concExtras.map(r => ({
+    'Produto': r.produto, 'Tipo': r.tipo, 'Embalagem': r.embalagem, 'Lote': r.lote, 'Qtd Contada': r.qtdContada,
+    'Mover De (sistema)': r.hintEndereco || '(não identificado)',
+    'Mover Para (achado)': r.endereco,
+    'Acao': r.hintEndereco ? 'Transferir endereço no sistema' : 'Investigar - produto novo ou erro de cadastro',
+    'Contador(es)': r.contadores
+  }));
+  const produtoStatusLabelXlsx = {BATE_NO_TOTAL:'Bate no total (troca de endereço)', FALTA_REAL:'Falta real', INCOMPLETO:'Incompleto'};
+  const produtoData = (window.concProdutoRollup || []).map(r => ({
+    'Produto': r.produto, 'Total Esperado': r.totalEsperado, 'Total Contado': r.totalContado,
+    'Diferenca Total': r.diffTotal, 'Status': produtoStatusLabelXlsx[r.status]
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryData), 'Resumo');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mainData), 'Conciliacao');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(extrasData), 'Itens nao previstos');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(produtoData), 'Por Produto');
+  XLSX.writeFile(wb, `conciliacao_${SITE.nome}_${dateStamp()}.xlsx`);
+}
+
+renderHome();
+</script></body>
+</html>
