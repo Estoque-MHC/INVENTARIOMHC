@@ -182,6 +182,7 @@
   tr.status-NAO_CONTADO td{color:var(--muted);}
   tr.status-CONFLITO td{background:rgba(240,180,41,.07);}
   tr.status-REALOCADO td{background:rgba(111,168,232,.08);}
+  tr.status-EXTRA td{background:rgba(240,180,41,.06);}
 
   .summary-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-bottom:9px;}
   @media (min-width:560px){ .summary-grid{grid-template-columns:repeat(4,1fr);} }
@@ -257,40 +258,56 @@
     th{ background:#F4F3EF !important; }
   }
 
-  /* ---- Relatório: dashboard em mosaico (bento grid), compacto ---- */
-  .section-sub{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); margin-bottom:8px; }
+  /* ---- Relatório: dashboard em mosaico (bento grid), com mais acabamento ---- */
+  .section-sub{ font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:10px; }
   .dash-grid{
-    display:grid; grid-template-columns:repeat(12, 1fr); grid-auto-rows:minmax(84px, auto); gap:10px;
+    display:grid; grid-template-columns:repeat(12, 1fr); grid-auto-rows:minmax(96px, auto); gap:14px;
   }
   .dash-card{
-    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px;
-    box-shadow:var(--shadow-sm); overflow:hidden;
+    background:linear-gradient(160deg, var(--panel) 0%, var(--panel-2) 130%);
+    border:1px solid var(--line-strong); border-radius:16px; padding:16px 18px;
+    box-shadow:0 8px 24px rgba(0,0,0,.38), 0 2px 6px rgba(0,0,0,.3);
+    overflow:hidden;
   }
   .span-3{ grid-column:span 3; }
   .span-4{ grid-column:span 4; }
   .span-5{ grid-column:span 5; }
   .span-12{ grid-column:span 12; }
   .span-row2{ grid-row:span 2; }
-  .ring-card{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:4px; }
-  .ring-card svg{ margin-bottom:2px; }
-  .ring-lbl{ font-size:10.5px; color:var(--ink-soft); font-weight:700; line-height:1.25; }
+  .span-row3{ grid-row:span 3; }
+  .ring-card{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:6px; }
+  .ring-card svg{ margin-bottom:2px; filter:drop-shadow(0 3px 10px rgba(0,0,0,.35)); }
+  .ring-lbl{ font-size:11.5px; color:var(--ink-soft); font-weight:800; line-height:1.25; text-transform:uppercase; letter-spacing:.02em; }
   .big-stat-card{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:2px; }
-  .big-stat-num{ font-size:34px; font-weight:800; letter-spacing:-.02em; line-height:1; }
-  .mini-breakdown{ font-size:10.5px; margin-top:4px; }
-  .donut-row{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-  .legend-mini{ display:flex; flex-direction:column; gap:5px; font-size:11px; }
-  .legend-mini .dot{ width:8px; height:8px; border-radius:2px; display:inline-block; margin-right:6px; }
-  .legend-mini b{ margin-left:5px; }
+  .big-stat-num{
+    font-size:44px; font-weight:900; letter-spacing:-.02em; line-height:1;
+    background:linear-gradient(160deg, #fff 0%, #9AA5B4 140%); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .mini-breakdown{ font-size:11px; font-weight:700; margin-top:6px; }
+  .donut-row{ display:flex; align-items:center; gap:20px; flex-wrap:wrap; justify-content:center; height:100%; }
+  .legend-mini{ display:flex; flex-direction:column; gap:9px; font-size:12.5px; font-weight:700; }
+  .legend-mini .dot{ width:10px; height:10px; border-radius:3px; display:inline-block; margin-right:7px; box-shadow:0 0 6px 0 currentColor; }
+  .legend-mini .dot-ok{ background:linear-gradient(135deg,#5EEAD4,#0F9D6E); color:#0F9D6E; }
+  .legend-mini .dot-bad{ background:linear-gradient(135deg,#FB9A96,#D1373A); color:#D1373A; }
+  .legend-mini .dot-nao{ background:linear-gradient(135deg,#5B6472,#242B36); color:#5B6472; }
+  .legend-mini .dot-warn{ background:linear-gradient(135deg,#FBD574,#D68E13); color:#D68E13; }
+  .legend-mini b{ margin-left:6px; font-weight:900; }
   .compact-table table{ font-size:11px; }
   .compact-table th, .compact-table td{ padding:4px 6px; }
   @media (max-width:900px){
     .span-3{ grid-column:span 6; }
     .span-4{ grid-column:span 6; }
     .span-5{ grid-column:span 12; }
-    .span-row2{ grid-row:span 1; }
+    .span-row2, .span-row3{ grid-row:span 1; }
   }
   @media (max-width:560px){ .span-3, .span-4{ grid-column:span 12; } }
-  @media print{ .dash-grid{ grid-template-columns:repeat(12,1fr) !important; } .span-3{grid-column:span 3 !important;} .span-4{grid-column:span 4 !important;} .span-5{grid-column:span 5 !important;} .span-row2{grid-row:span 2 !important;} }
+  @media print{
+    .dash-card{ box-shadow:none !important; background:#fff !important; }
+    .big-stat-num{ background:none !important; -webkit-text-fill-color:initial !important; color:#111 !important; }
+    .dash-grid{ grid-template-columns:repeat(12,1fr) !important; }
+    .span-3{grid-column:span 3 !important;} .span-4{grid-column:span 4 !important;} .span-5{grid-column:span 5 !important;}
+    .span-row2{grid-row:span 2 !important;} .span-row3{grid-row:span 3 !important;}
+  }
 </style>
 </head>
 <body>
@@ -1377,8 +1394,46 @@ function computeConciliacao(){
     }
   });
 
-  // Product-level rollup: sums a produto across ALL its addresses (system + extras).
-  // Answers: "does this look like a real shortage, or just split across addresses?"
+  // Agregação por produto+lote — inclui os extras (achados fora do previsto) no total contado.
+  // É a base única pra "bate no total" (REALOCADO) e pra acurácia — sempre por material, nunca
+  // por endereço isolado, porque um endereço sozinho não diz se o material sumiu de verdade.
+  const byProdutoLote = new Map();
+  window.concRows.forEach(r => {
+    const loteKey = (r.lote && r.lote !== '-') ? r.lote : '';
+    const key = r.produto + '|||' + loteKey;
+    if(!byProdutoLote.has(key)) byProdutoLote.set(key, {rows:[], extras:[]});
+    byProdutoLote.get(key).rows.push(r);
+  });
+  window.concExtras.forEach(r => {
+    const loteKey = (r.lote && r.lote !== '-') ? r.lote : '';
+    const key = r.produto + '|||' + loteKey;
+    if(!byProdutoLote.has(key)) byProdutoLote.set(key, {rows:[], extras:[]});
+    byProdutoLote.get(key).extras.push(r);
+  });
+
+  window.concBateNoTotalKeys = new Set();
+  let sumAbsDiffTotal = 0, sumEsperadoTotal = 0, groupsCounted = 0, groupsOk = 0;
+  byProdutoLote.forEach((g, key) => {
+    if(g.rows.length === 0) return; // só extra, sem linha do sistema — não cadastrado, fora da acurácia
+    const totalEsperado = g.rows.reduce((s,r)=>s+Number(r.saldo),0);
+    const allCounted = g.rows.every(r => r.status==='OK' || r.status==='DIVERGENTE');
+    const hasDivergente = g.rows.some(r => r.status === 'DIVERGENTE');
+    const totalContadoRows = g.rows.reduce((s,r)=> s + (r.status==='NAO_CONTADO'||r.status==='CONFLITO' ? 0 : Number(r.qtdContada)||0), 0);
+    const totalContadoExtras = g.extras.reduce((s,r)=> s + (Number(String(r.qtdContada).split('/')[0])||0), 0);
+    const totalContado = totalContadoRows + totalContadoExtras;
+    const diffTotal = totalContado - totalEsperado;
+    if(allCounted && hasDivergente && Math.abs(diffTotal) < 0.01){
+      window.concBateNoTotalKeys.add(key);
+    }
+    if(!allCounted) return; // ainda falta contar algum endereço desse material — não avalia acurácia ainda
+    groupsCounted++;
+    sumAbsDiffTotal += Math.abs(diffTotal);
+    sumEsperadoTotal += totalEsperado;
+    if(Math.abs(diffTotal) < 0.01) groupsOk++;
+  });
+
+  // Product-level rollup (só por produto, sem separar lote): alimenta a aba "Por produto",
+  // que é uma visão mais grosseira — "esse produto no geral tem falta real ou só bagunça de endereço".
   const byProduto = new Map();
   window.concRows.forEach(r => {
     if(!byProduto.has(r.produto)) byProduto.set(r.produto, {rows:[], extras:[]});
@@ -1412,15 +1467,13 @@ function computeConciliacao(){
   });
 
   const countedRows = window.concRows.filter(r => r.status !== 'NAO_CONTADO');
-  const okRows = countedRows.filter(r => r.status === 'OK');
-  const sumAbsDiff = countedRows.reduce((s,r) => s + Math.abs(Number(r.diff)||0), 0);
-  const sumSaldoCounted = countedRows.reduce((s,r) => s + Number(r.saldo), 0);
   window.concAccuracy = {
     coverage: window.concRows.length ? (countedRows.length / window.concRows.length * 100) : null,
-    skuAccuracy: countedRows.length ? (okRows.length / countedRows.length * 100) : null,
-    qtyAccuracy: sumSaldoCounted > 0 ? Math.max(0, (1 - sumAbsDiff/sumSaldoCounted) * 100) : null,
+    skuAccuracy: groupsCounted ? (groupsOk / groupsCounted * 100) : null,
+    qtyAccuracy: sumEsperadoTotal > 0 ? Math.max(0, (1 - sumAbsDiffTotal/sumEsperadoTotal) * 100) : null,
     countedN: countedRows.length, totalN: window.concRows.length,
-    sumAbsDiff, sumSaldoCounted, extrasN: window.concExtras.length
+    sumAbsDiff: sumAbsDiffTotal, sumSaldoCounted: sumEsperadoTotal, extrasN: window.concExtras.length,
+    groupsCounted, groupsOk
   };
 
   computeMovements(entriesByKey);
@@ -1558,30 +1611,52 @@ function matchesConcSearch(text){
 
 function pct(n){ return (n===null || n===undefined || isNaN(n)) ? '—' : n.toFixed(1) + '%'; }
 
-// ---------- Gráficos SVG (sem libs externas) ----------
+let svgIdCounter = 0;
+function nextSvgId(prefix){ return prefix + '_' + (svgIdCounter++); }
+
+// Paletas gradiente (cor clara -> cor escura) por categoria semântica
+const GRAD = {
+  ok:    ['#5EEAD4', '#0F9D6E'],
+  bad:   ['#FB9A96', '#D1373A'],
+  nao:   ['#5B6472', '#242B36'],
+  warn:  ['#FBD574', '#D68E13'],
+  accent:['#5EEAD4', '#12805C'],
+  blue:  ['#9CC7F5', '#3D7DC9']
+};
+
+// ---------- Gráficos SVG (sem libs externas), com gradiente + glow ----------
 function svgDonut(segments, size, thickness){
   size = size || 168; thickness = thickness || 24;
   const total = segments.reduce((s,x)=>s+x.value,0) || 1;
   const r = (size - thickness) / 2;
   const c = size / 2;
   const circumference = 2 * Math.PI * r;
+  const glowId = nextSvgId('glow');
   let offset = 0;
-  const paths = segments.map(seg => {
+  const defs = [];
+  const paths = segments.map((seg,idx) => {
+    const gradId = nextSvgId('dgrad');
+    const gp = GRAD[seg.gradKey] || [seg.color, seg.color];
+    defs.push(`<linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${gp[0]}"/><stop offset="100%" stop-color="${gp[1]}"/></linearGradient>`);
     const frac = seg.value / total;
     const dash = frac * circumference;
     const gap = circumference - dash;
-    const el = `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${thickness}" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>`;
+    const el = `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="url(#${gradId})" stroke-width="${thickness}" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 ${c} ${c})" filter="url(#${glowId})"/>`;
     offset += dash;
     return el;
   }).join('');
-  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="flex-shrink:0;">
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="flex-shrink:0; overflow:visible;">
+    <defs>
+      ${defs.join('')}
+      <filter id="${glowId}" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="${(thickness*0.14).toFixed(1)}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
     ${paths}
-    <text x="${c}" y="${c-3}" text-anchor="middle" font-size="22" font-weight="800" fill="var(--ink)">${total}</text>
-    <text x="${c}" y="${c+14}" text-anchor="middle" font-size="10" fill="var(--muted)">itens</text>
+    <text x="${c}" y="${c-3}" text-anchor="middle" font-size="${(size*0.15).toFixed(0)}" font-weight="900" fill="var(--ink)">${total}</text>
+    <text x="${c}" y="${c+16}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--muted)">itens</text>
   </svg>`;
 }
 
-function svgRing(valuePct, color, size, thickness){
+function svgRing(valuePct, gradKey, size, thickness){
   size = size || 108; thickness = thickness || 10;
   const r = (size - thickness) / 2;
   const c = size / 2;
@@ -1589,10 +1664,17 @@ function svgRing(valuePct, color, size, thickness){
   const v = (valuePct===null||valuePct===undefined||isNaN(valuePct)) ? null : Math.max(0, Math.min(100, valuePct));
   const dash = v===null ? 0 : circumference * v / 100;
   const gap = circumference - dash;
-  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+  const gradId = nextSvgId('rgrad');
+  const glowId = nextSvgId('rglow');
+  const gp = GRAD[gradKey] || ['#2ED191','#0F9D6E'];
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="overflow:visible;">
+    <defs>
+      <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${gp[0]}"/><stop offset="100%" stop-color="${gp[1]}"/></linearGradient>
+      <filter id="${glowId}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${(thickness*0.22).toFixed(1)}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
     <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--panel-2)" stroke-width="${thickness}"/>
-    <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${color}" stroke-width="${thickness}" stroke-linecap="round" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>
-    <text x="${c}" y="${c+size*0.07}" text-anchor="middle" font-size="${(size*0.22).toFixed(0)}" font-weight="800" fill="var(--ink)">${v===null?'—':v.toFixed(0)+'%'}</text>
+    <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="url(#${gradId})" stroke-width="${thickness}" stroke-linecap="round" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" transform="rotate(-90 ${c} ${c})" filter="url(#${glowId})"/>
+    <text x="${c}" y="${c+size*0.08}" text-anchor="middle" font-size="${(size*0.25).toFixed(0)}" font-weight="900" fill="var(--ink)">${v===null?'—':v.toFixed(0)+'%'}</text>
   </svg>`;
 }
 
@@ -1605,18 +1687,28 @@ function svgBarsH(items, opts){
   const maxVal = Math.max.apply(null, items.map(i => Math.abs(i.value)).concat([1]));
   const chartW = width - labelW - 64;
   const height = items.length * (barH + gap) + gap;
+  const glowId = nextSvgId('bglow');
+  const defs = [];
   const bars = items.map((it, idx) => {
     const y = gap + idx * (barH + gap);
     const w = Math.max(2, Math.abs(it.value) / maxVal * chartW);
-    const color = it.color || '#2ED191';
+    const gradId = nextSvgId('bgrad');
+    const gp = GRAD[it.gradKey] || [it.color||'#2ED191', it.color||'#2ED191'];
+    defs.push(`<linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="${gp[0]}"/><stop offset="100%" stop-color="${gp[1]}"/></linearGradient>`);
     const valueLabel = it.valueLabel !== undefined ? it.valueLabel : String(it.value);
     return `
-      <text x="${labelW-8}" y="${y+barH/2+4}" text-anchor="end" font-size="11" fill="var(--ink-soft)">${escapeHtml(it.label)}</text>
-      <rect x="${labelW}" y="${y}" width="${w.toFixed(1)}" height="${barH}" rx="4" fill="${color}"/>
-      <text x="${labelW+w+7}" y="${y+barH/2+4}" font-size="11" fill="var(--ink)">${escapeHtml(valueLabel)}</text>
+      <text x="${labelW-8}" y="${y+barH/2+4}" text-anchor="end" font-size="11" font-weight="600" fill="var(--ink-soft)">${escapeHtml(it.label)}</text>
+      <rect x="${labelW}" y="${y}" width="${w.toFixed(1)}" height="${barH}" rx="${(barH/2.4).toFixed(1)}" fill="url(#${gradId})" filter="url(#${glowId})"/>
+      <text x="${labelW+w+7}" y="${y+barH/2+4}" font-size="11" font-weight="700" fill="var(--ink)">${escapeHtml(valueLabel)}</text>
     `;
   }).join('');
-  return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}">${bars}</svg>`;
+  return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" style="overflow:visible;">
+    <defs>
+      ${defs.join('')}
+      <filter id="${glowId}" x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="1.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    ${bars}
+  </svg>`;
 }
 
 // ---------- Relatório final: dashboard compacto em mosaico, com impressão em PDF ----------
@@ -1633,14 +1725,14 @@ function renderRelatorio(){
   const topDiv = concRows.filter(r => r.status === 'DIVERGENTE')
     .slice()
     .sort((a,b) => Math.abs(Number(b.diff)) - Math.abs(Number(a.diff)))
-    .slice(0, 6)
+    .slice(0, 8)
     .map(r => {
       const full = `${r.endereco} · ${r.produto}`;
       return {
-        label: full.length > 18 ? full.slice(0,17)+'…' : full,
+        label: full.length > 20 ? full.slice(0,19)+'…' : full,
         value: Math.abs(Number(r.diff)),
         valueLabel: (Number(r.diff) > 0 ? '+' : '') + r.diff + 'kg',
-        color: Number(r.diff) > 0 ? '#F0B429' : '#F0645F'
+        gradKey: Number(r.diff) > 0 ? 'warn' : 'bad'
       };
     });
 
@@ -1651,20 +1743,8 @@ function renderRelatorio(){
   });
   const contadorItems = Array.from(byContador.entries())
     .sort((a,b) => b[1]-a[1])
-    .slice(0, 6)
-    .map(([name,count]) => ({label:name, value:count, valueLabel:String(count), color:'#2ED191'}));
-
-  const produtoRollup = window.concProdutoRollup || [];
-  const produtoStatusLabel = {BATE_NO_TOTAL:'Bate no total', FALTA_REAL:'Falta real', SOBRA_REAL:'Sobra real', INCOMPLETO:'Incompleto', NAO_CADASTRADO:'Não cadastrado'};
-  const produtoStatusClass = {BATE_NO_TOTAL:'neutral', FALTA_REAL:'bad', SOBRA_REAL:'warn', INCOMPLETO:'muted', NAO_CADASTRADO:'muted'};
-  const produtoRowsHtml = produtoRollup.map(r => `
-    <tr>
-      <td>${escapeHtml(r.produto)}</td>
-      <td>${r.totalEsperado}</td>
-      <td>${r.totalContado}</td>
-      <td>${r.diffTotal}</td>
-      <td><span class="pill ${produtoStatusClass[r.status]}">${produtoStatusLabel[r.status]}</span></td>
-    </tr>`).join('');
+    .slice(0, 8)
+    .map(([name,count]) => ({label:name, value:count, valueLabel:String(count), gradKey:'accent'}));
 
   const genDate = new Date().toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
@@ -1675,22 +1755,22 @@ function renderRelatorio(){
     </div>
     <div class="row between" style="margin-bottom:10px; align-items:flex-end;">
       <div>
-        <h2 style="font-size:17px; margin-bottom:1px;">Relatório de Contagem — ${escapeHtml(SITE.nome)}</h2>
+        <h2 style="font-size:19px; font-weight:900; margin-bottom:1px;">Relatório de Contagem — ${escapeHtml(SITE.nome)}</h2>
         <p class="muted" style="font-size:11px;">Gerado em ${genDate}${concExtras.length ? ` · ${concExtras.length} extra(s) não incluído(s) nos índices` : ''}</p>
       </div>
     </div>
 
     <div class="dash-grid">
       <div class="dash-card span-3 ring-card">
-        ${svgRing(acc.coverage, '#6FA8E8', 92, 9)}
+        ${svgRing(acc.coverage, 'blue', 108, 11)}
         <div class="ring-lbl">Cobertura contada</div>
       </div>
       <div class="dash-card span-3 ring-card">
-        ${svgRing(acc.skuAccuracy, '#34D399', 92, 9)}
+        ${svgRing(acc.skuAccuracy, 'ok', 108, 11)}
         <div class="ring-lbl">Acurácia por item</div>
       </div>
       <div class="dash-card span-3 ring-card">
-        ${svgRing(acc.qtyAccuracy, '#2ED191', 92, 9)}
+        ${svgRing(acc.qtyAccuracy, 'accent', 108, 11)}
         <div class="ring-lbl">Acurácia por quantidade</div>
       </div>
       <div class="dash-card span-3 big-stat-card">
@@ -1703,42 +1783,32 @@ function renderRelatorio(){
         </div>
       </div>
 
-      <div class="dash-card span-5 span-row2">
+      <div class="dash-card span-5 span-row3">
         <h3 class="section-sub">Distribuição de status</h3>
         <div class="donut-row">
           ${svgDonut([
-            {value:ok, color:'#34D399'},
-            {value:div, color:'#F0645F'},
-            {value:nao, color:'#3A4250'},
-            {value:conf, color:'#F0B429'}
-          ].filter(s => s.value > 0), 128, 20)}
+            {value:ok, gradKey:'ok'},
+            {value:div, gradKey:'bad'},
+            {value:nao, gradKey:'nao'},
+            {value:conf, gradKey:'warn'}
+          ].filter(s => s.value > 0), 190, 30)}
           <div class="legend-mini">
-            <div><span class="dot" style="background:#34D399;"></span>OK <b>${pct(total? ok/total*100 : null)}</b></div>
-            <div><span class="dot" style="background:#F0645F;"></span>Divergente <b>${pct(total? div/total*100 : null)}</b></div>
-            <div><span class="dot" style="background:#3A4250;"></span>Não contado <b>${pct(total? nao/total*100 : null)}</b></div>
-            <div><span class="dot" style="background:#F0B429;"></span>Conflito <b>${pct(total? conf/total*100 : null)}</b></div>
+            <div><span class="dot dot-ok"></span>OK <b>${pct(total? ok/total*100 : null)}</b></div>
+            <div><span class="dot dot-bad"></span>Divergente <b>${pct(total? div/total*100 : null)}</b></div>
+            <div><span class="dot dot-nao"></span>Não contado <b>${pct(total? nao/total*100 : null)}</b></div>
+            <div><span class="dot dot-warn"></span>Conflito <b>${pct(total? conf/total*100 : null)}</b></div>
           </div>
         </div>
       </div>
 
-      <div class="dash-card span-4 span-row2">
+      <div class="dash-card span-4 span-row3">
         <h3 class="section-sub">Maiores divergências (kg)</h3>
-        ${topDiv.length ? svgBarsH(topDiv, {width:340, barH:11, gap:6, labelW:110}) : '<div class="empty" style="padding:20px 0;">Nenhuma divergência</div>'}
+        ${topDiv.length ? svgBarsH(topDiv, {width:340, barH:16, gap:9, labelW:120}) : '<div class="empty" style="padding:20px 0;">Nenhuma divergência</div>'}
       </div>
 
-      <div class="dash-card span-3 span-row2">
+      <div class="dash-card span-3 span-row3">
         <h3 class="section-sub">Itens por pessoa</h3>
-        ${contadorItems.length ? svgBarsH(contadorItems, {width:220, barH:11, gap:6, labelW:60}) : '<div class="empty" style="padding:20px 0;">—</div>'}
-      </div>
-
-      <div class="dash-card span-12">
-        <h3 class="section-sub">Resumo por produto</h3>
-        <div class="table-wrap compact-table" style="max-height:220px;">
-          <table>
-            <thead><tr><th>Produto</th><th>Esper.</th><th>Contado</th><th>Dif.</th><th>Status</th></tr></thead>
-            <tbody>${produtoRowsHtml || '<tr><td colspan="5" class="empty">Sem divergências ou extras</td></tr>'}</tbody>
-          </table>
-        </div>
+        ${contadorItems.length ? svgBarsH(contadorItems, {width:220, barH:16, gap:9, labelW:64}) : '<div class="empty" style="padding:20px 0;">—</div>'}
       </div>
     </div>
   `);
@@ -1755,10 +1825,9 @@ function renderAccuracyCard(acc){
         <div class="stat"><div class="num">${pct(acc.qtyAccuracy)}</div><div class="lbl">Acurácia por quantidade</div></div>
       </div>
       <p class="muted" style="margin:10px 0 0; font-size:12px; line-height:1.5;">
-        <strong>Cobertura</strong>: quanto do total já foi contado (${acc.countedN} de ${acc.totalN}).
-        <strong>Acurácia por item</strong>: dos itens já contados, quantos bateram exatamente com o sistema.
-        <strong>Acurácia por quantidade</strong>: pondera pelo peso — um erro de 25kg pesa menos que um de 1500kg, mesmo contando como "1 divergência" nos dois casos.
-        Nenhuma das três conta os ${acc.extrasN} item(ns) extra (isso é acurácia de local, não de quantidade).
+        <strong>Cobertura</strong>: quanto do total de endereços já foi contado (${acc.countedN} de ${acc.totalN}).
+        <strong>Acurácia por item</strong>: por material (produto+lote), não por endereço isolado — de ${acc.groupsCounted||0} materiais já totalmente contados, quantos bateram exato no total (somando todos os endereços + achados extra do mesmo lote).
+        <strong>Acurácia por quantidade</strong>: mesma base, ponderada pelo peso — um erro de 25kg pesa menos que um de 1500kg. Realocação (mesmo lote, endereço trocado, bate no total) não conta como erro.
       </p>
     </div>`;
 }
@@ -1811,20 +1880,29 @@ function renderConciliacaoResult(){
   const conf = concRows.filter(r=>r.status==='CONFLITO').length;
 
   const filter = state.concFilter;
-  let filtered = filter==='ALL' ? concRows : (filter==='EXTRAS' ? [] : concRows.filter(r=>r.status===filter));
+  const extrasAsRows = concExtras.map(r => ({
+    endereco: r.endereco, produto: r.produto, tipo: r.tipo, embalagem: r.embalagem, lote: r.lote,
+    situacao: '', saldo: '', qtdContada: r.qtdContada, diff: '', status: 'EXTRA',
+    obs: r.hintNote || 'não previsto no sistema', contadores: r.contadores
+  }));
+  let filtered = filter==='ALL' ? concRows.concat(extrasAsRows) : (filter==='EXTRAS' ? [] : concRows.filter(r=>r.status===filter));
   if(state.concSearchLive && state.concSearchLive.trim()){
     filtered = filtered.filter(r => matchesConcSearch(r.endereco) || matchesConcSearch(r.produto) || matchesConcSearch(r.lote));
   }
   filtered = applySort(filtered);
 
-  const produtoStatusMap = new Map((window.concProdutoRollup||[]).map(r => [r.produto, r.status]));
   const tableRows = filtered.map(r => {
-    const bateNoTotal = r.status==='DIVERGENTE' && produtoStatusMap.get(r.produto)==='BATE_NO_TOTAL';
+    const loteKey = (r.lote && r.lote !== '-') ? r.lote : '';
+    const bateNoTotal = r.status==='DIVERGENTE' && window.concBateNoTotalKeys && window.concBateNoTotalKeys.has(r.produto + '|||' + loteKey);
     let dispClass, dispStatus, dispObs;
-    if(bateNoTotal){
+    if(r.status === 'EXTRA'){
+      dispClass = 'status-EXTRA';
+      dispStatus = '<span class="pill warn">EXTRA · FORA DO PREVISTO</span>';
+      dispObs = r.obs;
+    } else if(bateNoTotal){
       dispClass = 'status-REALOCADO';
       dispStatus = '<span class="pill neutral">REALOCADO</span>';
-      dispObs = 'bate no total do produto — mal alocado, não é falta real';
+      dispObs = 'bate no total do lote — mal alocado, não é falta real';
     } else if(r.status === 'DIVERGENTE'){
       const isMais = Number(r.diff) > 0;
       dispClass = isMais ? 'status-MAIS' : 'status-MENOS';
@@ -1912,7 +1990,7 @@ function renderConciliacaoResult(){
     ${concExtras.length ? `<div class="warn-box">⚠ ${concExtras.length} item(ns) contados fora do previsto — veja o filtro "Extras".</div>` : ''}
     <input type="text" id="concSearchLive" placeholder="Filtrar por endereço, produto ou lote..." value="${escapeAttr(state.concSearchLive||'')}" oninput="onConcSearchInput(this)" style="margin-bottom:8px;">
     <div class="filterbar">
-      <button class="${filter==='ALL'?'active':''}" onclick="setConcFilter('ALL')">Todos (${total})</button>
+      <button class="${filter==='ALL'?'active':''}" onclick="setConcFilter('ALL')">Todos (${total + concExtras.length})</button>
       <button class="${filter==='DIVERGENTE'?'active':''}" onclick="setConcFilter('DIVERGENTE')">Material a mais/menos (${div})</button>
       <button class="${filter==='NAO_CONTADO'?'active':''}" onclick="setConcFilter('NAO_CONTADO')">Não contados (${nao})</button>
       <button class="${filter==='CONFLITO'?'active':''}" onclick="setConcFilter('CONFLITO')">Conflitos (${conf})</button>
@@ -2007,11 +2085,17 @@ function exportConciliacaoXlsx(){
     {Metrica: 'Total de itens no sistema', Valor: acc.totalN||0},
     {Metrica: 'Itens extra (fora do previsto)', Valor: acc.extrasN||0}
   ];
-  const mainData = concRows.map(r => ({
-    'Endereco': r.endereco, 'Produto': r.produto, 'Tipo': r.tipo, 'Embalagem': r.embalagem, 'Lote': r.lote,
-    'Situacao': r.situacao, 'Saldo Sistema': r.saldo, 'Qtd Contada': r.qtdContada, 'Diferenca': r.diff,
-    'Status': r.status, 'Observacao': r.obs, 'Contador(es)': r.contadores
-  }));
+  const mainData = concRows.map(r => {
+    const loteKey = (r.lote && r.lote !== '-') ? r.lote : '';
+    const bateNoTotal = r.status==='DIVERGENTE' && window.concBateNoTotalKeys && window.concBateNoTotalKeys.has(r.produto + '|||' + loteKey);
+    return {
+      'Endereco': r.endereco, 'Produto': r.produto, 'Tipo': r.tipo, 'Embalagem': r.embalagem, 'Lote': r.lote,
+      'Situacao': r.situacao, 'Saldo Sistema': r.saldo, 'Qtd Contada': r.qtdContada, 'Diferenca': r.diff,
+      'Status': bateNoTotal ? 'REALOCADO' : r.status,
+      'Observacao': bateNoTotal ? 'bate no total do lote — mal alocado, não é falta real' : r.obs,
+      'Contador(es)': r.contadores
+    };
+  });
   const extrasData = concExtras.map(r => ({
     'Produto': r.produto, 'Tipo': r.tipo, 'Embalagem': r.embalagem, 'Lote': r.lote, 'Qtd Contada': r.qtdContada,
     'Mover De (sistema)': r.hintEndereco || '(não identificado)',
@@ -2019,7 +2103,7 @@ function exportConciliacaoXlsx(){
     'Acao': r.hintEndereco ? 'Transferir endereço no sistema' : 'Investigar - produto novo ou erro de cadastro',
     'Contador(es)': r.contadores
   }));
-  const produtoStatusLabelXlsx = {BATE_NO_TOTAL:'Bate no total (troca de endereço)', FALTA_REAL:'Falta real', INCOMPLETO:'Incompleto'};
+  const produtoStatusLabelXlsx = {BATE_NO_TOTAL:'Bate no total (troca de endereço)', FALTA_REAL:'Falta real', SOBRA_REAL:'Sobra real', INCOMPLETO:'Incompleto', NAO_CADASTRADO:'Não cadastrado'};
   const produtoData = (window.concProdutoRollup || []).map(r => ({
     'Produto': r.produto, 'Total Esperado': r.totalEsperado, 'Total Contado': r.totalContado,
     'Diferenca Total': r.diffTotal, 'Status': produtoStatusLabelXlsx[r.status]
